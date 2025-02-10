@@ -56,7 +56,7 @@ runs:
 
     - name: Upload ZAP Report to AccuKnox CSPM Panel
       run: |
-        response=$(curl --location --request POST "https://${{ inputs.accuknox_endpoint }}/api/v1/artifact/?tenant_id=${{ inputs.tenant_id }}&data_type=ZAP&label_id=${{ inputs.label }}&save_to_s3=false" \
+        response=$(curl --location --request POST "https://${{ inputs.accuknox_endpoint }}/api/v1/artifact/?tenant_id=${{ inputs.tenant_id }}&data_type=ZAP&label_id=${{ inputs.label }}&save_to_s3=true" \
           --header "Tenant-Id: ${{ inputs.tenant_id }}" \
           --header "Authorization: Bearer ${{ inputs.accuknox_token }}" \
           --form "file=@/tmp/zap/report.json")
