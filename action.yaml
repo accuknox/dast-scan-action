@@ -44,6 +44,7 @@ runs:
         fi
 
         docker run --rm \
+	  --network host \
           -v /tmp/zap:/zap/wrk \
           -t zaproxy/zap-stable $SCAN_COMMAND
       shell: bash

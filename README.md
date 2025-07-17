@@ -1,56 +1,49 @@
 
 
-# AccuKnox DAST Scan GitHub Action
+# AccuKnox DAST
 
-## Learn More
+🔍 Automate Dynamic Application Security Testing (DAST) in Your CI/CD Pipeline
 
-- [About Accuknox](https://www.accuknox.com/)
+The **AccuKnox DAST GitHub Action** enables automated **Dynamic Application Security Testing** for web applications. It scans your application and uploads the findings to the **AccuKnox Console** for centralized monitoring and actionable security insights.
 
-**Description**  
+---
 
-This GitHub Action performs a Dynamic Application Security Testing (DAST) scan and uploads the scan results to the AccuKnox Console. This action can be configured with specific inputs to integrate seamlessly into your DevSecOps pipeline.
+## 🎯 Key Features
 
-## Inputs
+✅ Dynamic Web Application Security Testing – Detects real-time vulnerabilities
+✅ Seamless CI/CD Integration – Easily integrates into GitHub workflows
+✅ Real-Time Visibility – Uploads scan results to the AccuKnox Console
+✅ Severity Threshold Enforcement – Blocks deployments based on criticality
+✅ Customizable Scan Options – Choose between `baseline` and `full-scan` modes
 
-| Input               | Description                                                                                                  | Required  | Default       |
-|---------------------|--------------------------------------------------------------------------------------------------------------|-----------|---------------|
-| `target_url`        | The URL of the web application to scan.                                                                      | Yes       |               |
-| `accuknox_token`    | Token for authenticating with the AccuKnox Console.                                                       | Yes       |               |
-| `accuknox_endpoint` | The URL of the AccuKnox Console where scan results will be uploaded.                                      | Yes       |               |
-| `tenant_id`         | The ID of the tenant associated with the AccuKnox Console.                                            | Yes       |               |
-| `label`             | Label created in AccuKnox Console to associate the scan results.                                                | Yes       |               |
-| `severity_threshold`| Minimum severity level (e.g., High, Medium, Low, Informational) that will cause the pipeline to fail.       | Yes       |               |
-| `scan_type`         | Type of scan to run: `baseline` or `full-scan`.                                                          | Yes       | `full-scan`   |
+---
 
-## Usage
+## ⚠️ Prerequisites
 
-### Steps for Using the AccuKnox DAST Scan Action in a Workflow
+Before using this GitHub Action, ensure the following:
 
-1. **Checkout the Repo**  
-   Use the `actions/checkout` action to ensure the codebase is available for scanning.
+1️⃣ **AccuKnox Account** – Required to access the AccuKnox Console
+2️⃣ **Running Web Application URL** – Required for performing the scan
+3️⃣ **GitHub Repository with Actions Enabled** – To run workflows
+4️⃣ **AccuKnox API Token & Tenant ID** – For authentication (see below)
 
-2. **Add AccuKnox DAST Scan Action**  
-   Reference the `accuknox/dast-scan-action` repository with the desired version tag, e.g., `v1.0.0`.
+---
 
-3. **Token Generation from AccuKnox SaaS and Viewing Tenant ID**  
-   To obtain the `accuknox_token` and `tenant_id` values needed to authenticate with AccuKnox:
-   
-   - **Navigate to Tokens**  
-     Go to the **Settings** section in the AccuKnox SaaS sidebar.
+## 📌 Installation & Usage
 
-     ![1](https://github.com/udit-uniyal/container-scan-action/assets/115368361/8f4e188b-d9f3-4404-83af-134d5dc1417a)
-   
-   - **Create Token**  
-     In the "Tokens" section, click on **Create Token**. This action will display your `tenant_id` and allow you to generate an access token.
+### Step 1: Retrieve AccuKnox API Credentials
 
-     ![2](https://github.com/udit-uniyal/container-scan-action/assets/115368361/296bc611-acb8-4918-9d6b-3a8ec7733377)
-   
-   - **Generate the Token**  
-     After clicking **Generate**, copy the `accuknox_token` to use in the workflow.
+To authenticate with the AccuKnox Console:
 
-   ![3](https://github.com/udit-uniyal/container-scan-action/assets/115368361/16032af0-bcac-4787-8f2a-a3fa0edc6ec6)
+1️⃣ Navigate to **Settings → Tokens** in the AccuKnox Console
+2️⃣ Click **Create Token** to generate your `accuknox_token` and view `tenant_id`
+3️⃣ Securely store these credentials for GitHub Secrets
 
-### Example Workflow File
+---
+
+### Step 2: Implement the Workflow YAML
+
+Create a workflow file `.github/workflows/accuknox-dast.yml` and add the following:
 
 ```yaml
 name: AccuKnox DAST Scan Workflow
@@ -78,24 +71,66 @@ jobs:
           scan_type: "baseline"
 ```
 
-### Secrets Setup
+---
 
-Add the following secrets in your GitHub repository under **Settings > Secrets**:
+## ⚙️ Configuration Options (Inputs)
 
-- `ACCUKNOX_ENDPOINT`: Your AccuKnox CSPM endpoint.
-- `TENANT_ID`: Your AccuKnox tenant ID.
-- `ACCUKNOX_TOKEN`: Your AccuKnox API token.
+| Input                | Description                                                                  | Required | Default     |
+| -------------------- | ---------------------------------------------------------------------------- | -------- | ----------- |
+| `target_url`         | The web application URL to scan                                              | ✅ Yes    | —           |
+| `accuknox_token`     | Token to authenticate with the AccuKnox Console                              | ✅ Yes    | —           |
+| `accuknox_endpoint`  | URL of the AccuKnox Console to upload results                                | ✅ Yes    | —           |
+| `tenant_id`          | Tenant ID associated with your AccuKnox account                              | ✅ Yes    | —           |
+| `label`              | Label to tag the scan results in the AccuKnox Console                        | ✅ Yes    | —           |
+| `severity_threshold` | Severity level (e.g., High, Medium, Low, Informational) to fail the pipeline | ✅ Yes    | —           |
+| `scan_type`          | Type of scan to perform (`baseline` or `full-scan`)                          | ✅ Yes    | `full-scan` |
 
-## How It Works
+---
 
-1. **AccuKnox DAST Scan**: The action initiates a DAST scan on the specified `target_url`.
-2. **AccuKnox Report Generation**: Generates a report in JSON format.
-3. **Report Upload**: The report is uploaded to the AccuKnox CSPM panel for centralized monitoring and insights.
-4. **Severity Check**: The action checks for vulnerabilities that meet or exceed the specified `severity_threshold`. If any are found, the workflow fails.
+## 🔐 Secrets Setup
 
-## Notes
+Go to **Settings > Secrets and variables > Actions** in your GitHub repository and add:
 
-- Ensure secrets are configured correctly in your GitHub repository.
-- The AccuKnox panel provides a centralized view of all DAST results.
+* `ACCUKNOX_ENDPOINT` → Your AccuKnox Console endpoint
+* `TENANT_ID` → Your AccuKnox tenant ID
+* `ACCUKNOX_TOKEN` → API token generated in the AccuKnox Console
 
-For more information, visit the [AccuKnox website](https://www.accuknox.com/).
+---
+
+## 🔍 How It Works
+
+1️⃣ **Scan Execution** – The action triggers a DAST scan on the specified `target_url`
+2️⃣ **Report Generation** – A vulnerability report is generated in JSON format
+3️⃣ **Upload to AccuKnox Console** – The report is uploaded for centralized analysis
+4️⃣ **Severity Check** – The pipeline fails if any issues meet or exceed the configured `severity_threshold`
+
+---
+
+## 🛠️ Troubleshooting & Best Practices
+
+❌ **Pipeline Failed Due to Vulnerabilities?**
+→ Adjust the `severity_threshold` or resolve critical issues before merge
+
+🔐 **Invalid Token Errors?**
+→ Recheck and update your GitHub secrets, or regenerate from the Console
+
+💡 **Best Practices**
+→ Run scans on production-like environments for accurate results
+→ Tag scans meaningfully using the `label` input
+
+---
+
+## 📖 Support & Documentation
+
+📚 Read More: [AccuKnox Documentation](https://help.accuknox.com)
+📧 Contact: [support@accuknox.com](mailto:support@accuknox.com)
+
+---
+
+## 🏆 Conclusion
+
+The **AccuKnox DAST GitHub Action** helps you shift security left by automating real-time vulnerability detection and enforcement—directly in your CI/CD pipelines.
+
+🔹 **Secure Your Web Applications with AccuKnox DAST – Start Today!** 🔒
+
+
