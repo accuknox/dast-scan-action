@@ -10,11 +10,11 @@ The **AccuKnox DAST GitHub Action** enables automated **Dynamic Application Secu
 
 ## 🎯 Key Features
 
-✅ Dynamic Web Application Security Testing – Detects real-time vulnerabilities
-✅ Seamless CI/CD Integration – Easily integrates into GitHub workflows
-✅ Real-Time Visibility – Uploads scan results to the AccuKnox Console
-✅ Severity Threshold Enforcement – Blocks deployments based on criticality
-✅ Customizable Scan Options – Choose between `baseline` and `full-scan` modes
+- Dynamic Web Application Security Testing – Detects real-time vulnerabilities
+- Seamless CI/CD Integration – Easily integrates into GitHub workflows
+- Real-Time Visibility – Uploads scan results to the AccuKnox Console
+- Severity Threshold Enforcement – Blocks deployments based on criticality
+- Customizable Scan Options – Choose between `baseline` and `full-scan` modes
 
 ---
 
@@ -22,10 +22,10 @@ The **AccuKnox DAST GitHub Action** enables automated **Dynamic Application Secu
 
 Before using this GitHub Action, ensure the following:
 
-1️⃣ **AccuKnox Account** – Required to access the AccuKnox Console
-2️⃣ **Running Web Application URL** – Required for performing the scan
-3️⃣ **GitHub Repository with Actions Enabled** – To run workflows
-4️⃣ **AccuKnox API Token & Tenant ID** – For authentication (see below)
+- **AccuKnox Account** – Required to access the AccuKnox Console
+- **Running Web Application URL** – Required for performing the scan
+- **GitHub Repository with Actions Enabled** – To run workflows
+- **AccuKnox API Token & Tenant ID** – For authentication (see below)
 
 ---
 
@@ -35,9 +35,9 @@ Before using this GitHub Action, ensure the following:
 
 To authenticate with the AccuKnox Console:
 
-1️⃣ Navigate to **Settings → Tokens** in the AccuKnox Console
-2️⃣ Click **Create Token** to generate your `accuknox_token` and view `tenant_id`
-3️⃣ Securely store these credentials for GitHub Secrets
+- Navigate to **Settings → Tokens** in the AccuKnox Console
+- Click **Create Token** to generate your `accuknox_token` and view `tenant_id`
+- Securely store these credentials for GitHub Secrets
 
 ---
 
