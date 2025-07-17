@@ -99,10 +99,10 @@ Go to **Settings > Secrets and variables > Actions** in your GitHub repository a
 
 ## 🔍 How It Works
 
-1️⃣ **Scan Execution** – The action triggers a DAST scan on the specified `target_url`
-2️⃣ **Report Generation** – A vulnerability report is generated in JSON format
-3️⃣ **Upload to AccuKnox Console** – The report is uploaded for centralized analysis
-4️⃣ **Severity Check** – The pipeline fails if any issues meet or exceed the configured `severity_threshold`
+- **Scan Execution** – The action triggers a DAST scan on the specified `target_url`
+- **Report Generation** – A vulnerability report is generated in JSON format
+- **Upload to AccuKnox Console** – The report is uploaded for centralized analysis
+- **Severity Check** – The pipeline fails if any issues meet or exceed the configured `severity_threshold`
 
 ---
 
