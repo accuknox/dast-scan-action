@@ -1,6 +1,5 @@
 name: AccuKnox DAST
-description: Run a DAST (full or baseline) and upload the reports to the AccuKnox CSPM panel.
-
+description: Run a DAST (baseline or full) scan using OWASP ZAP and upload report to AccuKnox CSPM.
 inputs:
   target_url:
     description: "The URL of the web application to scan."
@@ -18,7 +17,7 @@ inputs:
     description: "Label created in AccuKnox SaaS for associating the scan results."
     required: true
   severity_threshold:
-    description: "The minimum severity level (e.g., High, Medium, Low, Informational) that will cause the pipeline to fail if present in the report."
+    description: "Minimum severity level (High, Medium, Low, Informational) that fails the pipeline if present."
     required: true
   scan_type:
     description: "Type of scan to run: 'baseline' or 'full-scan'."
@@ -28,67 +27,87 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Set permissions for output directory
-      run: |
-        mkdir -p /tmp/zap
-        chmod a+w /tmp/zap
-        ls -la /tmp/zap
+    - name: Prepare Output Directory
+      run: mkdir -p /tmp/zap && chmod a+w /tmp/zap
       shell: bash
 
-    - name: Run DAST
+    - name: Create ZAP Config
       run: |
+        cat > /tmp/zap/log4j.properties << 'EOF'
+        log4j.rootLogger=INFO, stdout
+        log4j.appender.stdout=org.apache.log4j.ConsoleAppender
+        log4j.appender.stdout.Target=System.out
+        log4j.appender.stdout.layout=org.apache.log4j.PatternLayout
+        log4j.appender.stdout.layout.ConversionPattern=%d{yyyy-MM-dd HH:mm:ss} [%p] %c{1} - %m%n
+        log4j.logger.org.apache.xerces=WARN
+        log4j.logger.org.xml=WARN
+        EOF
+
         if [ "${{ inputs.scan_type }}" == "baseline" ]; then
-          SCAN_COMMAND="zap-baseline.py -t ${{ inputs.target_url }} -J report.json -I"
+          cat > /tmp/zap/zap-automation.yaml << 'EOF'
+        env:
+          contexts:
+            - name: target-context
+              urls: ["${{ inputs.target_url }}"]
+              includePaths: ["${{ inputs.target_url }}.*"]
+          parameters: {failOnError: false, failOnWarning: false, progressToStdout: true}
+        jobs:
+          - type: spider
+            parameters: {context: target-context, maxDuration: 1}
+          - type: passiveScan-wait
+            parameters: {maxDuration: 2}
+          - type: report
+            parameters: {template: traditional-json-plus, reportDir: /zap/wrk, reportFile: report.json}
+        EOF
         else
-          SCAN_COMMAND="zap-full-scan.py -t ${{ inputs.target_url }} -J report.json -I"
+          cat > /tmp/zap/zap-automation.yaml << 'EOF'
+        env:
+          contexts:
+            - name: target-context
+              urls: ["${{ inputs.target_url }}"]
+              includePaths: ["${{ inputs.target_url }}.*"]
+          parameters: {failOnError: false, failOnWarning: false, progressToStdout: true}
+        jobs:
+          - type: spider
+            parameters: {context: target-context, maxDuration: 5}
+          - type: activeScan
+            parameters: {context: target-context, maxRuleDurationInMins: 10, maxScanDurationInMins: 15}
+          - type: report
+            parameters: {template: traditional-json-plus, reportDir: /zap/wrk, reportFile: report.json}
+        EOF
         fi
-
-        docker run --rm \
-          -v /tmp/zap:/zap/wrk \
-          -t zaproxy/zap-stable $SCAN_COMMAND
       shell: bash
 
-    - name: View Report
+    - name: Run ZAP Scan
       run: |
-        cat /tmp/zap/report.json
+        docker run --rm -v /tmp/zap:/zap/wrk -t zaproxy/zap-stable \
+        zap.sh -cmd -autorun /zap/wrk/zap-automation.yaml \
+        -configfile /zap/wrk/log4j.properties || true
       shell: bash
 
+    - name: Verify Report
+      run: if [ ! -f "/tmp/zap/report.json" ]; then echo "Report not found"; exit 1; fi
+      shell: bash
 
-    - name: Upload DAST Report to AccuKnox CSPM Panel
+    - name: Upload Report to AccuKnox
       run: |
-        response=$(curl --location --request POST "https://${{ inputs.accuknox_endpoint }}/api/v1/artifact/?tenant_id=${{ inputs.tenant_id }}&data_type=ZAP&label_id=${{ inputs.label }}&save_to_s3=true" \
+        response=$(curl -s --location --request POST "https://${{ inputs.accuknox_endpoint }}/api/v1/artifact/?tenant_id=${{ inputs.tenant_id }}&data_type=ZAP&label_id=${{ inputs.label }}&save_to_s3=true" \
           --header "Tenant-Id: ${{ inputs.tenant_id }}" \
           --header "Authorization: Bearer ${{ inputs.accuknox_token }}" \
           --form "file=@/tmp/zap/report.json")
-
-        echo "Response: $response"
-        if [[ "$response" != *"File received successfully"* ]]; then
-          echo "Error: Failed to push report to CSPM panel"
-          exit 1
-        fi
+        [[ "$response" == *"File received successfully"* ]] || { echo "Upload failed"; exit 1; }
       shell: bash
 
-    - name: Check Severity Level in ZAP Report
+    - name: Check Severity Threshold
       run: |
-        # Map severity threshold to risk code (0=Informational, 1=Low, 2=Medium, 3=High)
         case "${{ inputs.severity_threshold }}" in
-          High)           RISK_CODE=3 ;;
-          Medium)         RISK_CODE=2 ;;
-          Low)            RISK_CODE=1 ;;
-          Informational)  RISK_CODE=0 ;;
-          *)              echo "Invalid severity threshold"; exit 1 ;;
+          High) RISK=3 ;; Medium) RISK=2 ;; Low) RISK=1 ;; Informational) RISK=0 ;;
+          *) echo "Invalid threshold"; exit 1 ;;
         esac
-
-        # Check if any alerts in the report meet or exceed the threshold risk code
-        if jq -e --argjson risk_code "$RISK_CODE" \
-             '.site[].alerts[] | select(.riskcode|tonumber >= $risk_code)' /tmp/zap/report.json > /dev/null; then
-          echo "Error: Vulnerability with severity ${{ inputs.severity_threshold }} or higher found in ZAP report."
-          exit 1
-        else
-          echo "No vulnerabilities with severity ${{ inputs.severity_threshold }} or higher were found."
+        if jq -e --argjson risk "$RISK" '.site[].alerts[] | select(.riskcode|tonumber >= $risk)' /tmp/zap/report.json >/dev/null; then
+          echo "Vulnerabilities >= ${{ inputs.severity_threshold }} found."; exit 1
         fi
       shell: bash
-
 
 branding:
   icon: "shield"
