@@ -31,6 +31,16 @@ inputs:
 runs:
   using: "composite"
   steps:
+
+     - name: Prepare ZAP output directory
+        run: |
+          # Create a directory for ZAP scan results
+          mkdir -p /tmp/zap
+          chmod a+w /tmp/zap
+          echo "ZAP output directory ready:"
+          ls -la /tmp/zap
+        shell: bash
+
     - name: Run AccuKnox DAST Scan
       shell: bash
       env:
