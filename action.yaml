@@ -52,7 +52,7 @@ runs:
       run: |
         /tmp/accuknox-aspm-scanner tool install --type dast
 
-   - name: Run AccuKnox DAST scan
+    - name: Run DAST scan
       shell: bash
       env:
         ACCUKNOX_TOKEN: ${{ inputs.token }}
@@ -65,18 +65,24 @@ runs:
         SCAN_DIR: "/tmp/scan-dir"
       run: |
         set -e
-        mkdir -p $SCAN_DIR
-        chmod 777 $SCAN_DIR
         cd $SCAN_DIR
-    
-        # Soft fail flag
+
+        # Validate required inputs
+        if [ -z "$ACCUKNOX_TOKEN" ] || [ -z "$ACCUKNOX_LABEL" ] || [ -z "$ACCUKNOX_ENDPOINT" ] || [ -z "$TARGET_URL" ]; then
+          echo "ERROR: token, label, endpoint, and target_url must be provided!"
+          exit 1
+        fi
+
+        # Prepare softfail flag
         SOFT_FAIL_ARG=""
         if [ "$SOFT_FAIL" = "true" ]; then
           SOFT_FAIL_ARG="--softfail"
         fi
-    
-        # Scanner arguments ONLY
+
+        # Build scanner arguments (DO NOT prefix with zap.sh)
         SCANNER_ARGS="--target-url $TARGET_URL --severity-threshold $SEVERITY_THRESHOLD --dast-scan-type $DAST_SCAN_TYPE"
-    
+
         echo "Running AccuKnox DAST scan..."
+        echo "/tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command \"$SCANNER_ARGS\" --container-mode"
+
         /tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command "$SCANNER_ARGS" --container-mode
