@@ -44,6 +44,7 @@ runs:
       run: |
         set -e
 
+        # Validate required inputs
         if [ -z "$ACCUKNOX_TOKEN" ] || [ -z "$ACCUKNOX_LABEL" ] || [ -z "$ACCUKNOX_ENDPOINT" ] || [ -z "$TARGET_URL" ]; then
           echo "ERROR: token, label, endpoint, and target_url must be provided!"
           exit 1
@@ -56,16 +57,18 @@ runs:
         echo "Installing DAST tool..."
         ./accuknox-aspm-scanner tool install --type dast
 
-        # Handle soft fail flag
+        # Handle soft fail
         SOFT_FAIL="${SOFT_FAIL//[$'\t\r\n ']}"
         SOFT_FAIL_ARG=""
         if [ "$SOFT_FAIL" = "true" ]; then
           SOFT_FAIL_ARG="--softfail"
         fi
 
-        ARGS="--target-url \"$TARGET_URL\""
-        [ -n "$SEVERITY_THRESHOLD" ] && ARGS="$ARGS --severity-threshold \"$SEVERITY_THRESHOLD\""
-        [ -n "$DAST_SCAN_TYPE" ] && ARGS="$ARGS --dast-scan-type \"$DAST_SCAN_TYPE\""
+        # Build the command for DAST scan
+        CMD="--target-url $TARGET_URL"
+        [ -n "$SEVERITY_THRESHOLD" ] && CMD="$CMD --severity-threshold $SEVERITY_THRESHOLD"
+        [ -n "$DAST_SCAN_TYPE" ] && CMD="$CMD --dast-scan-type $DAST_SCAN_TYPE"
 
-        echo "Running: ./accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast $ARGS"
-        eval ./accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast $ARGS
+        echo "Running AccuKnox DAST scan..."
+        echo "./accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command \"$CMD\""
+        eval ./accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command "$CMD"
