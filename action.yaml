@@ -78,11 +78,9 @@ runs:
         fi
 
         # Properly wrap the entire zap.sh command as a single string
-        DAST_CMD="zap.sh -t '$TARGET_URL' -s '$SEVERITY_THRESHOLD' -S '$DAST_SCAN_TYPE'"
+        CMD="zap.sh -t '$TARGET_URL' -s '$SEVERITY_THRESHOLD' -S '$DAST_SCAN_TYPE'"
 
-        # echo "Running AccuKnox DAST scan in container mode..."
-        # /tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command "$DAST_CMD" --container-mode
+        echo "Running AccuKnox DAST scan in container mode..."
+        /tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command "$CMD" --container-mode
 
-        echo "Full DAST command: /tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command \"$DAST_CMD\" --container-mode"
-        set -x   # Bash debug: prints each command
-        /tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command "$DAST_CMD" --container-mode || true
+     
