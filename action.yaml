@@ -64,25 +64,26 @@ runs:
         SOFT_FAIL: ${{ inputs.soft_fail }}
       run: |
         set -e
-
+    
         if [ -z "$ACCUKNOX_TOKEN" ] || [ -z "$ACCUKNOX_LABEL" ] || [ -z "$ACCUKNOX_ENDPOINT" ] || [ -z "$TARGET_URL" ]; then
           echo "ERROR: token, label, endpoint, and target_url must be provided!"
           exit 1
         fi
-
+    
         cd /tmp/scan-dir
-
+    
         SOFT_FAIL_ARG=""
         if [ "$SOFT_FAIL" = "true" ]; then
           SOFT_FAIL_ARG="--softfail"
         fi
-
-        CMD_ARGS="-t $TARGET_URL -I"
+    
+        # Build scanner command arguments correctly
+        CMD_ARGS="--target-url $TARGET_URL"
         [ -n "$SEVERITY_THRESHOLD" ] && CMD_ARGS="$CMD_ARGS --severity-threshold $SEVERITY_THRESHOLD"
         [ -n "$DAST_SCAN_TYPE" ] && CMD_ARGS="$CMD_ARGS --dast-scan-type $DAST_SCAN_TYPE"
-
+    
         echo "Running AccuKnox DAST scan..."
-        echo "/tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command \"$CMD_ARGS\" --container-mode"
+        echo "/tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command '$CMD_ARGS' --container-mode"
         /tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command "$CMD_ARGS" --container-mode
-
+    
         cd -
