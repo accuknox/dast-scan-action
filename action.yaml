@@ -33,8 +33,10 @@ runs:
   steps:
     - name: Install AccuKnox ASPM Scanner
       run: |
-        echo "Installing AccuKnox ASPM scanner..."
-        pip install https://github.com/accuknox/aspm-scanner-cli/releases/download/v0.13.4/accuknox_aspm_scanner-0.13.4-py3-none-any.whl --break-system-packages
+        echo "Downloading AccuKnox ASPM scanner..."
+        curl -L https://github.com/accuknox/aspm-scanner-cli/releases/download/v0.13.4/accuknox-aspm-scanner -o /tmp/accuknox-aspm-scanner
+        chmod +x /tmp/accuknox-aspm-scanner
+        echo "ASPM scanner ready at /tmp/accuknox-aspm-scanner"
       shell: bash
 
     - name: Prepare scan directory
@@ -44,10 +46,10 @@ runs:
         echo "Scan directory ready at /tmp/scan-dir"
       shell: bash
 
-    - name: Install AccuKnox DAST (Java/ZAP) tool
+    - name: Install AccuKnox DAST Java/ZAP tool
       run: |
         echo "Installing AccuKnox DAST Java/ZAP tool..."
-        ./accuknox-aspm-scanner tool install --type dast-java
+        /tmp/accuknox-aspm-scanner tool install --type dast-java
       shell: bash
 
     - name: Run AccuKnox DAST Scan
@@ -80,7 +82,7 @@ runs:
         [ -n "$DAST_SCAN_TYPE" ] && CMD_ARGS="$CMD_ARGS --dast-scan-type $DAST_SCAN_TYPE"
 
         echo "Running AccuKnox DAST scan..."
-        echo "./accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command \"$CMD_ARGS\" --container-mode"
-        ./accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command "$CMD_ARGS" --container-mode
+        echo "/tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command \"$CMD_ARGS\" --container-mode"
+        /tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command "$CMD_ARGS" --container-mode
 
         cd -
