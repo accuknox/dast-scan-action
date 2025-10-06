@@ -31,14 +31,24 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Prepare ZAP output directory
+
+    - name: Download AccuKnox ASPM Scanner
       shell: bash
       run: |
+        curl -L https://github.com/accuknox/aspm-scanner-cli/releases/download/v0.13.4/accuknox-aspm-scanner -o accuknox-aspm-scanner
+        chmod +x accuknox-aspm-scanner
+        echo "AccuKnox ASPM Scanner ready."
+
+    - name: Install DAST tool
+      shell: bash
+      run: |
+        echo "Installing AccuKnox DAST (Java/ZAP) tool..."
+        ./accuknox-aspm-scanner tool install --type dast-java
+        # Ensure ZAP output directory exists
         ZAP_OUTPUT_DIR="$HOME/.local/bin/accuknox/dast/zap"
         mkdir -p "$ZAP_OUTPUT_DIR"
         chmod a+w "$ZAP_OUTPUT_DIR"
-        echo "Created ZAP output directory: $ZAP_OUTPUT_DIR"
-        ls -la "$ZAP_OUTPUT_DIR"
+        echo "DAST output directory ready: $ZAP_OUTPUT_DIR"
 
     - name: Run AccuKnox DAST Scan
       shell: bash
@@ -59,13 +69,6 @@ runs:
           exit 1
         fi
 
-        echo "Downloading AccuKnox ASPM Scanner..."
-        curl -L https://github.com/accuknox/aspm-scanner-cli/releases/download/v0.13.4/accuknox-aspm-scanner -o accuknox-aspm-scanner
-        chmod +x accuknox-aspm-scanner
-
-        echo "Installing DAST tool..."
-        ./accuknox-aspm-scanner tool install --type dast
-
         # Handle soft fail
         SOFT_FAIL="${SOFT_FAIL//[$'\t\r\n ']}"
         SOFT_FAIL_ARG=""
@@ -73,11 +76,10 @@ runs:
           SOFT_FAIL_ARG="--softfail"
         fi
 
-        # Build scan command string correctly
+        # Build the scan command
         CMD_ARGS="--target-url $TARGET_URL"
         [ -n "$SEVERITY_THRESHOLD" ] && CMD_ARGS="$CMD_ARGS --severity-threshold $SEVERITY_THRESHOLD"
         [ -n "$DAST_SCAN_TYPE" ] && CMD_ARGS="$CMD_ARGS --dast-scan-type $DAST_SCAN_TYPE"
 
         echo "Running AccuKnox DAST scan..."
-        echo ./accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command "\"$CMD_ARGS\""
         ./accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command "$CMD_ARGS"
