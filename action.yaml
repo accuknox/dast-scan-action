@@ -1,84 +1,51 @@
 name: "AccuKnox DAST Scanner"
-description: "Run AccuKnox Dynamic Application Security Testing (DAST) scan on a web application"
 
-inputs:
-  token:
-    description: "API token for AccuKnox CSPM Console"
-    required: true
-  label:
-    description: "Label for scan results in AccuKnox Console"
-    required: true
-  endpoint:
-    description: "CSPM Console endpoint URL"
-    required: true
-    default: "https://cspm.demo.accuknox.com"
-  target_url:
-    description: "The URL of the web application to scan"
-    required: true
-  severity_threshold:
-    description: "Minimum severity to fail the scan (LOW, MEDIUM, HIGH)"
-    required: false
-    default: "HIGH"
-  dast_scan_type:
-    description: "DAST scan type: baseline or full-scan"
-    required: false
-    default: "baseline"
-  soft_fail:
-    description: "Do not return an error code if vulnerabilities are found"
-    required: false
-    default: true
+on:
+  workflow_dispatch:
 
-runs:
-  using: "composite"
-  steps:
-    - name: Prepare scan directory
-      shell: bash
-      run: |
-        mkdir -p /tmp/scan-dir
-        chmod 777 /tmp/scan-dir
-        echo "Scan directory ready: /tmp/scan-dir"
+jobs:
+  dast_scan:
+    runs-on: ubuntu-latest
+    env:
+      TARGET_URL: "http://testphp.vulnweb.com"
+      SEVERITY_THRESHOLD: "HIGH"
+      DAST_SCAN_TYPE: "baseline"
+      SOFT_FAIL: "true"
+      SCAN_DIR: "/tmp/scan-dir"
 
-    - name: Download AccuKnox ASPM Scanner
-      shell: bash
-      run: |
-        curl -L https://github.com/accuknox/aspm-scanner-cli/releases/download/v0.13.4/accuknox-aspm-scanner -o /tmp/accuknox-aspm-scanner
-        chmod +x /tmp/accuknox-aspm-scanner
-        echo "AccuKnox ASPM Scanner ready at /tmp/accuknox-aspm-scanner"
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
 
-    - name: Install DAST tool
-      shell: bash
-      run: |
-        echo "Installing AccuKnox DAST tool..."
-        /tmp/accuknox-aspm-scanner tool install --type dast
+      - name: Prepare scan directory
+        run: |
+          mkdir -p $SCAN_DIR
+          chmod 777 $SCAN_DIR
+          echo "Scan directory ready: $SCAN_DIR"
 
-    - name: Run AccuKnox DAST scan
-      shell: bash
-      env:
-        ACCUKNOX_TOKEN: ${{ inputs.token }}
-        ACCUKNOX_LABEL: ${{ inputs.label }}
-        ACCUKNOX_ENDPOINT: ${{ inputs.endpoint }}
-        TARGET_URL: ${{ inputs.target_url }}
-        SEVERITY_THRESHOLD: ${{ inputs.severity_threshold }}
-        DAST_SCAN_TYPE: ${{ inputs.dast_scan_type }}
-        SOFT_FAIL: ${{ inputs.soft_fail }}
-      run: |
-        set -e
-        cd /tmp/scan-dir
+      - name: Download AccuKnox ASPM Scanner
+        run: |
+          curl -L https://github.com/accuknox/aspm-scanner-cli/releases/download/v0.13.4/accuknox-aspm-scanner -o /tmp/accuknox-aspm-scanner
+          chmod +x /tmp/accuknox-aspm-scanner
+          echo "AccuKnox ASPM Scanner ready at /tmp/accuknox-aspm-scanner"
 
-        if [ -z "$ACCUKNOX_TOKEN" ] || [ -z "$ACCUKNOX_LABEL" ] || [ -z "$ACCUKNOX_ENDPOINT" ] || [ -z "$TARGET_URL" ]; then
-          echo "ERROR: token, label, endpoint, and target_url must be provided!"
-          exit 1
-        fi
+      - name: Install DAST tool
+        run: |
+          /tmp/accuknox-aspm-scanner tool install --type dast
 
-        # Prepare soft fail
-        SOFT_FAIL_ARG=""
-        if [ "$SOFT_FAIL" = "true" ]; then
-          SOFT_FAIL_ARG="--softfail"
-        fi
+      - name: Run DAST Scan
+        run: |
+          cd $SCAN_DIR
 
-        # Build command string
-        CMD_ARGS="--target-url $TARGET_URL --severity-threshold $SEVERITY_THRESHOLD --dast-scan-type $DAST_SCAN_TYPE"
+          SOFT_FAIL_ARG=""
+          if [ "$SOFT_FAIL" = "true" ]; then
+            SOFT_FAIL_ARG="--softfail"
+          fi
 
-        echo "Running AccuKnox DAST scan..."
-        echo "/tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command '$CMD_ARGS' --container-mode"
-        /tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command "$CMD_ARGS" --container-mode
+          # **Build full DAST command as a single string**
+          DAST_CMD="zap.sh -t $TARGET_URL -s $SEVERITY_THRESHOLD -S $DAST_SCAN_TYPE"
+
+          echo "Running AccuKnox DAST scan..."
+          echo "/tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command \"$DAST_CMD\" --container-mode"
+          
+          /tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command "$DAST_CMD" --container-mode
