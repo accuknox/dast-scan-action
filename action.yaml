@@ -31,27 +31,25 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: Install AccuKnox ASPM Scanner
+      run: |
+        echo "Installing AccuKnox ASPM scanner..."
+        pip install https://github.com/accuknox/aspm-scanner-cli/releases/download/v0.13.4/accuknox_aspm_scanner-0.13.4-py3-none-any.whl --break-system-packages
+      shell: bash
 
-    # Step 1: Create temporary scan directory
     - name: Prepare scan directory
       run: |
-        export SCAN_DIR="/tmp/scan-dir"
-        mkdir -p "$SCAN_DIR"
-        chmod a+w "$SCAN_DIR"
-        echo "Scan directory created at $SCAN_DIR"
+        mkdir -p /tmp/scan-dir
+        chmod 777 /tmp/scan-dir
+        echo "Scan directory ready at /tmp/scan-dir"
       shell: bash
 
-    # Step 2: Ensure ZAP folder exists
-    - name: Prepare ZAP output directory
+    - name: Install AccuKnox DAST (Java/ZAP) tool
       run: |
-        ZAP_DIR="$HOME/.local/bin/accuknox/dast/zap"
-        mkdir -p "$ZAP_DIR"
-        chmod a+w "$ZAP_DIR"
-        echo "DAST output directory ready: $ZAP_DIR"
-        ls -la "$ZAP_DIR"
+        echo "Installing AccuKnox DAST Java/ZAP tool..."
+        ./accuknox-aspm-scanner tool install --type dast-java
       shell: bash
 
-    # Step 3: Run DAST scan
     - name: Run AccuKnox DAST Scan
       shell: bash
       env:
@@ -65,33 +63,24 @@ runs:
       run: |
         set -e
 
-        # Validate required inputs
         if [ -z "$ACCUKNOX_TOKEN" ] || [ -z "$ACCUKNOX_LABEL" ] || [ -z "$ACCUKNOX_ENDPOINT" ] || [ -z "$TARGET_URL" ]; then
           echo "ERROR: token, label, endpoint, and target_url must be provided!"
           exit 1
         fi
 
-        # Download AccuKnox ASPM Scanner
-        echo "Downloading AccuKnox ASPM Scanner..."
-        curl -L https://github.com/accuknox/aspm-scanner-cli/releases/download/v0.13.4/accuknox-aspm-scanner -o accuknox-aspm-scanner
-        chmod +x accuknox-aspm-scanner
+        cd /tmp/scan-dir
 
-        # Install DAST tool
-        echo "Installing AccuKnox DAST tool..."
-        ./accuknox-aspm-scanner tool install --type dast
-
-        # Handle soft fail
-        SOFT_FAIL="${SOFT_FAIL//[$'\t\r\n ']}"
         SOFT_FAIL_ARG=""
         if [ "$SOFT_FAIL" = "true" ]; then
           SOFT_FAIL_ARG="--softfail"
         fi
 
-        # Build the command string
-        CMD_ARGS="--target-url $TARGET_URL"
+        CMD_ARGS="-t $TARGET_URL -I"
         [ -n "$SEVERITY_THRESHOLD" ] && CMD_ARGS="$CMD_ARGS --severity-threshold $SEVERITY_THRESHOLD"
         [ -n "$DAST_SCAN_TYPE" ] && CMD_ARGS="$CMD_ARGS --dast-scan-type $DAST_SCAN_TYPE"
 
-        # Run DAST scan
         echo "Running AccuKnox DAST scan..."
-        ./accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command "$CMD_ARGS"
+        echo "./accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command \"$CMD_ARGS\" --container-mode"
+        ./accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command "$CMD_ARGS" --container-mode
+
+        cd -
