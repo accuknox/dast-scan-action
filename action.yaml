@@ -31,28 +31,27 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Install AccuKnox ASPM Scanner
-      run: |
-        echo "Downloading AccuKnox ASPM scanner..."
-        curl -L https://github.com/accuknox/aspm-scanner-cli/releases/download/v0.13.4/accuknox-aspm-scanner -o /tmp/accuknox-aspm-scanner
-        chmod +x /tmp/accuknox-aspm-scanner
-        echo "ASPM scanner ready at /tmp/accuknox-aspm-scanner"
-      shell: bash
-
     - name: Prepare scan directory
+      shell: bash
       run: |
         mkdir -p /tmp/scan-dir
         chmod 777 /tmp/scan-dir
-        echo "Scan directory ready at /tmp/scan-dir"
-      shell: bash
+        echo "Scan directory ready: /tmp/scan-dir"
 
-    - name: Install AccuKnox DAST tool
+    - name: Download AccuKnox ASPM Scanner
+      shell: bash
+      run: |
+        curl -L https://github.com/accuknox/aspm-scanner-cli/releases/download/v0.13.4/accuknox-aspm-scanner -o /tmp/accuknox-aspm-scanner
+        chmod +x /tmp/accuknox-aspm-scanner
+        echo "AccuKnox ASPM Scanner ready at /tmp/accuknox-aspm-scanner"
+
+    - name: Install DAST tool
+      shell: bash
       run: |
         echo "Installing AccuKnox DAST tool..."
         /tmp/accuknox-aspm-scanner tool install --type dast
-      shell: bash
 
-    - name: Run AccuKnox DAST Scan
+    - name: Run AccuKnox DAST scan
       shell: bash
       env:
         ACCUKNOX_TOKEN: ${{ inputs.token }}
@@ -64,26 +63,22 @@ runs:
         SOFT_FAIL: ${{ inputs.soft_fail }}
       run: |
         set -e
-    
+        cd /tmp/scan-dir
+
         if [ -z "$ACCUKNOX_TOKEN" ] || [ -z "$ACCUKNOX_LABEL" ] || [ -z "$ACCUKNOX_ENDPOINT" ] || [ -z "$TARGET_URL" ]; then
           echo "ERROR: token, label, endpoint, and target_url must be provided!"
           exit 1
         fi
-    
-        cd /tmp/scan-dir
-    
+
+        # Prepare soft fail
         SOFT_FAIL_ARG=""
         if [ "$SOFT_FAIL" = "true" ]; then
           SOFT_FAIL_ARG="--softfail"
         fi
-    
-        # Build scanner command arguments correctly
-        CMD_ARGS="--target-url $TARGET_URL"
-        [ -n "$SEVERITY_THRESHOLD" ] && CMD_ARGS="$CMD_ARGS --severity-threshold $SEVERITY_THRESHOLD"
-        [ -n "$DAST_SCAN_TYPE" ] && CMD_ARGS="$CMD_ARGS --dast-scan-type $DAST_SCAN_TYPE"
-    
+
+        # Build command string
+        CMD_ARGS="--target-url $TARGET_URL --severity-threshold $SEVERITY_THRESHOLD --dast-scan-type $DAST_SCAN_TYPE"
+
         echo "Running AccuKnox DAST scan..."
         echo "/tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command '$CMD_ARGS' --container-mode"
         /tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command "$CMD_ARGS" --container-mode
-    
-        cd -
