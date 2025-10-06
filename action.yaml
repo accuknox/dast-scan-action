@@ -75,8 +75,8 @@ runs:
           SOFT_FAIL_ARG="--softfail"
         fi
 
-        CMD_ARGS="--target-url \"$TARGET_URL\" --severity-threshold \"$SEVERITY_THRESHOLD\" --dast-scan-type \"$DAST_SCAN_TYPE\""
+        # Properly escape entire command as a single string
+        DAST_CMD="--target-url '$TARGET_URL' --severity-threshold '$SEVERITY_THRESHOLD' --dast-scan-type '$DAST_SCAN_TYPE'"
 
         echo "Running AccuKnox DAST scan..."
-        echo "/tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command \"$CMD_ARGS\" --container-mode"
-        /tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command "$CMD_ARGS" --container-mode
+        /tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command "$DAST_CMD" --container-mode
