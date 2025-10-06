@@ -46,10 +46,10 @@ runs:
         echo "Scan directory ready at /tmp/scan-dir"
       shell: bash
 
-    - name: Install AccuKnox DAST Java/ZAP tool
+    - name: Install AccuKnox DAST tool
       run: |
-        echo "Installing AccuKnox DAST Java/ZAP tool..."
-        /tmp/accuknox-aspm-scanner tool install --type dast-java
+        echo "Installing AccuKnox DAST tool..."
+        /tmp/accuknox-aspm-scanner tool install --type dast
       shell: bash
 
     - name: Run AccuKnox DAST Scan
