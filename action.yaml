@@ -68,7 +68,7 @@ runs:
         ARGS="--target-url $TARGET_URL"
         [ -n "$SEVERITY_THRESHOLD" ] && ARGS="$ARGS --severity-threshold $SEVERITY_THRESHOLD"
         [ -n "$DAST_SCAN_TYPE" ] && ARGS="$ARGS --dast-scan-type $DAST_SCAN_TYPE"
-
+        
         echo "Running AccuKnox DAST scan..."
-        echo ./accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command "$ARGS"
+        echo ./accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command "\"$ARGS\""
         ./accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command "$ARGS"
