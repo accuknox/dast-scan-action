@@ -2,6 +2,16 @@ name: "AccuKnox DAST Scanner"
 description: "Run AccuKnox Dynamic Application Security Testing (DAST) scan on a web application"
 
 inputs:
+  token:
+    description: "API token for AccuKnox CSPM Console"
+    required: true
+  label:
+    description: "Label for scan results in AccuKnox Console"
+    required: true
+  endpoint:
+    description: "CSPM Console endpoint URL"
+    required: true
+    default: "https://cspm.demo.accuknox.com"
   target_url:
     description: "The URL of the web application to scan"
     required: true
@@ -17,15 +27,6 @@ inputs:
     description: "Do not return an error code if vulnerabilities are found"
     required: false
     default: true
-  endpoint:
-    description: "CSPM panel endpoint URL"
-    required: true
-  label:
-    description: "Label in AccuKnox SaaS for scan results"
-    required: true
-  token:
-    description: "Token for authenticating with CSPM panel"
-    required: true
 
 runs:
   using: "composite"
@@ -36,20 +37,19 @@ runs:
         SCAN_DIR="/tmp/scan-dir"
         mkdir -p "$SCAN_DIR"
         chmod 777 "$SCAN_DIR"
-        cd "$SCAN_DIR"
         echo "Scan directory ready at $SCAN_DIR"
 
     - name: Download AccuKnox ASPM Scanner
       shell: bash
       run: |
-        curl -L https://github.com/accuknox/aspm-scanner-cli/releases/download/v0.13.4/accuknox-aspm-scanner -o accuknox-aspm-scanner
-        chmod +x accuknox-aspm-scanner
-        echo "AccuKnox ASPM Scanner ready at $SCAN_DIR/accuknox-aspm-scanner"
+        curl -L https://github.com/accuknox/aspm-scanner-cli/releases/download/v0.13.4/accuknox-aspm-scanner -o /tmp/accuknox-aspm-scanner
+        chmod +x /tmp/accuknox-aspm-scanner
+        echo "AccuKnox ASPM Scanner ready at /tmp/accuknox-aspm-scanner"
 
     - name: Install DAST tool
       shell: bash
       run: |
-        ./accuknox-aspm-scanner tool install --type dast
+        /tmp/accuknox-aspm-scanner tool install --type dast
 
     - name: Run DAST scan
       shell: bash
@@ -62,6 +62,9 @@ runs:
         DAST_SCAN_TYPE: ${{ inputs.dast_scan_type }}
         SOFT_FAIL: ${{ inputs.soft_fail }}
       run: |
+        set -e
+        cd /tmp/scan-dir
+
         if [ -z "$ACCUKNOX_TOKEN" ] || [ -z "$ACCUKNOX_LABEL" ] || [ -z "$ACCUKNOX_ENDPOINT" ] || [ -z "$TARGET_URL" ]; then
           echo "ERROR: ACCUKNOX_TOKEN, ACCUKNOX_LABEL, ACCUKNOX_ENDPOINT, and TARGET_URL must be set!"
           exit 1
@@ -71,11 +74,9 @@ runs:
         if [ "$SOFT_FAIL" = "true" ]; then
           SOFT_FAIL_ARG="--softfail"
         fi
-    
-        # Build scanner command as a single quoted string
+
         CMD_ARGS="--target-url \"$TARGET_URL\" --severity-threshold \"$SEVERITY_THRESHOLD\" --dast-scan-type \"$DAST_SCAN_TYPE\""
-    
-        echo "./accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command \"$CMD_ARGS\" --container-mode --repo-url $GITHUB_SERVER_URL/$GITHUB_REPOSITORY.git --repo-branch ${GITHUB_REF#refs/heads/}"
-        
-        # Correctly pass CMD_ARGS as one argument to --command
-        ./accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command "$CMD_ARGS" --container-mode --repo-url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY.git" --repo-branch "${GITHUB_REF#refs/heads/}"
+
+        echo "Running AccuKnox DAST scan..."
+        echo "/tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command \"$CMD_ARGS\" --container-mode"
+        /tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command "$CMD_ARGS" --container-mode
