@@ -54,8 +54,8 @@ runs:
     - name: Run DAST scan
       shell: bash
       env:
-        ACCUKNOX_TOKEN: ${{ inputs.token }}
-        ACCUKNOX_LABEL: ${{ inputs.label }}
+        ACCUKNOX_TOKEN: ${{ secrets.ACCUKNOX_TOKEN }}
+        ACCUKNOX_LABEL: ${{ secrets.ACCUKNOX_LABEL }}
         ACCUKNOX_ENDPOINT: ${{ inputs.endpoint }}
         TARGET_URL: ${{ inputs.target_url }}
         SEVERITY_THRESHOLD: ${{ inputs.severity_threshold }}
@@ -64,23 +64,21 @@ runs:
       run: |
         set -e
         cd /tmp/scan-dir
-
-        # Validate required inputs
+    
         if [ -z "$ACCUKNOX_TOKEN" ] || [ -z "$ACCUKNOX_LABEL" ] || [ -z "$ACCUKNOX_ENDPOINT" ] || [ -z "$TARGET_URL" ]; then
           echo "ERROR: ACCUKNOX_TOKEN, ACCUKNOX_LABEL, ACCUKNOX_ENDPOINT, and TARGET_URL must be set!"
           exit 1
         fi
-
-        # Prepare softfail flag
+    
+        SOFT_FAIL="${SOFT_FAIL//[$'\t\r\n ']}"
         SOFT_FAIL_ARG=""
         if [ "$SOFT_FAIL" = "true" ]; then
           SOFT_FAIL_ARG="--softfail"
         fi
-
-        # Properly wrap the entire zap.sh command as a single string
-        CMD="zap.sh -t '$TARGET_URL' -s '$SEVERITY_THRESHOLD' -S '$DAST_SCAN_TYPE'"
-
+    
+        DAST_CMD="zap.sh -t '$TARGET_URL' -s '$SEVERITY_THRESHOLD' -S '$DAST_SCAN_TYPE'"
+    
+        echo "Full DAST command: /tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command \"$DAST_CMD\" --container-mode"
         echo "Running AccuKnox DAST scan in container mode..."
-        /tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command "$CMD" --container-mode
-
-     
+        /tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command "$DAST_CMD" --container-mode
+        
