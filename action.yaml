@@ -32,12 +32,13 @@ runs:
   using: "composite"
   steps:
     - name: Prepare ZAP output directory
-      run: |
-        mkdir -p /tmp/zap
-        chmod a+w /tmp/zap
-        echo "ZAP output directory ready:"
-        ls -la /tmp/zap
       shell: bash
+      run: |
+        ZAP_OUTPUT_DIR="$HOME/.local/bin/accuknox/dast/zap"
+        mkdir -p "$ZAP_OUTPUT_DIR"
+        chmod a+w "$ZAP_OUTPUT_DIR"
+        echo "Created ZAP output directory: $ZAP_OUTPUT_DIR"
+        ls -la "$ZAP_OUTPUT_DIR"
 
     - name: Run AccuKnox DAST Scan
       shell: bash
@@ -72,11 +73,11 @@ runs:
           SOFT_FAIL_ARG="--softfail"
         fi
 
-        # Build command string correctly
-        ARGS="--target-url $TARGET_URL"
-        [ -n "$SEVERITY_THRESHOLD" ] && ARGS="$ARGS --severity-threshold $SEVERITY_THRESHOLD"
-        [ -n "$DAST_SCAN_TYPE" ] && ARGS="$ARGS --dast-scan-type $DAST_SCAN_TYPE"
-        
+        # Build scan command string correctly
+        CMD_ARGS="--target-url $TARGET_URL"
+        [ -n "$SEVERITY_THRESHOLD" ] && CMD_ARGS="$CMD_ARGS --severity-threshold $SEVERITY_THRESHOLD"
+        [ -n "$DAST_SCAN_TYPE" ] && CMD_ARGS="$CMD_ARGS --dast-scan-type $DAST_SCAN_TYPE"
+
         echo "Running AccuKnox DAST scan..."
-        echo ./accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command "'$ARGS'"
-        ./accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command "$ARGS"
+        echo ./accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command "\"$CMD_ARGS\""
+        ./accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command "$CMD_ARGS"
