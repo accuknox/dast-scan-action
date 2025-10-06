@@ -65,10 +65,10 @@ runs:
         fi
 
         # Build the command for DAST scan
-        CMD="--target-url $TARGET_URL"
-        [ -n "$SEVERITY_THRESHOLD" ] && CMD="$CMD --severity-threshold $SEVERITY_THRESHOLD"
-        [ -n "$DAST_SCAN_TYPE" ] && CMD="$CMD --dast-scan-type $DAST_SCAN_TYPE"
+        CMD=(--target-url "$TARGET_URL")
+        [ -n "$SEVERITY_THRESHOLD" ] && CMD+=(--severity-threshold "$SEVERITY_THRESHOLD")
+        [ -n "$DAST_SCAN_TYPE" ] && CMD+=(--dast-scan-type "$DAST_SCAN_TYPE")
 
         echo "Running AccuKnox DAST scan..."
-        echo "./accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command \"$CMD\""
-        eval ./accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command "$CMD"
+        echo ./accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command "${CMD[@]}"
+        ./accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command "${CMD[@]}"
