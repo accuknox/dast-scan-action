@@ -42,8 +42,8 @@ runs:
     - name: Install DAST tool
       shell: bash
       run: |
-        echo "Installing AccuKnox DAST (Java/ZAP) tool..."
-        ./accuknox-aspm-scanner tool install --type dast-java
+        echo "Installing AccuKnox DAST tool..."
+        ./accuknox-aspm-scanner tool install --type dast
         # Ensure ZAP output directory exists
         ZAP_OUTPUT_DIR="$HOME/.local/bin/accuknox/dast/zap"
         mkdir -p "$ZAP_OUTPUT_DIR"
@@ -76,7 +76,7 @@ runs:
           SOFT_FAIL_ARG="--softfail"
         fi
 
-        # Build the scan command
+        # Build command string
         CMD_ARGS="--target-url $TARGET_URL"
         [ -n "$SEVERITY_THRESHOLD" ] && CMD_ARGS="$CMD_ARGS --severity-threshold $SEVERITY_THRESHOLD"
         [ -n "$DAST_SCAN_TYPE" ] && CMD_ARGS="$CMD_ARGS --dast-scan-type $DAST_SCAN_TYPE"
