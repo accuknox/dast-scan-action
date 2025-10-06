@@ -67,14 +67,15 @@ runs:
           exit 1
         fi
 
-        # Soft fail handling
         SOFT_FAIL_ARG=""
         if [ "$SOFT_FAIL" = "true" ]; then
           SOFT_FAIL_ARG="--softfail"
         fi
-
-        # Build scanner command
+    
+        # Build scanner command as a single quoted string
         CMD_ARGS="--target-url \"$TARGET_URL\" --severity-threshold \"$SEVERITY_THRESHOLD\" --dast-scan-type \"$DAST_SCAN_TYPE\""
-
-        echo "./accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command $CMD_ARGS --container-mode --repo-url $GITHUB_SERVER_URL/$GITHUB_REPOSITORY.git --repo-branch ${GITHUB_REF#refs/heads/}"
-        ./accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command $CMD_ARGS --container-mode --repo-url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY.git" --repo-branch "${GITHUB_REF#refs/heads/}"
+    
+        echo "./accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command \"$CMD_ARGS\" --container-mode --repo-url $GITHUB_SERVER_URL/$GITHUB_REPOSITORY.git --repo-branch ${GITHUB_REF#refs/heads/}"
+        
+        # Correctly pass CMD_ARGS as one argument to --command
+        ./accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command "$CMD_ARGS" --container-mode --repo-url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY.git" --repo-branch "${GITHUB_REF#refs/heads/}"
