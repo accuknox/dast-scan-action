@@ -26,12 +26,11 @@ inputs:
   soft_fail:
     description: "Do not return an error code if vulnerabilities are found"
     required: false
-    default: true
+    default: "true"
 
 runs:
   using: "composite"
   steps:
-
     - name: Prepare scan directory
       shell: bash
       run: |
@@ -79,7 +78,7 @@ runs:
           SOFT_FAIL_ARG="--softfail"
         fi
 
-        # Build scanner arguments (DO NOT prefix with zap.sh)
+        # Build scanner arguments
         SCANNER_ARGS="--target-url $TARGET_URL --severity-threshold $SEVERITY_THRESHOLD --dast-scan-type $DAST_SCAN_TYPE"
 
         echo "Running AccuKnox DAST scan..."
