@@ -31,12 +31,15 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
     - name: Prepare scan directory
       shell: bash
       run: |
         SCAN_DIR="/tmp/scan-dir"
-        mkdir -p $SCAN_DIR
-        chmod 777 $SCAN_DIR
+        mkdir -p "$SCAN_DIR"
+        chmod 777 "$SCAN_DIR"
         echo "Scan directory ready at $SCAN_DIR"
 
     - name: Download AccuKnox ASPM Scanner
@@ -54,17 +57,17 @@ runs:
     - name: Run DAST scan
       shell: bash
       env:
-        ACCUKNOX_TOKEN: ${{ inputs.token }}
-        ACCUKNOX_LABEL: ${{ inputs.label }}
-        ACCUKNOX_ENDPOINT: ${{ inputs.endpoint }}
-        TARGET_URL: ${{ inputs.target_url }}
-        SEVERITY_THRESHOLD: ${{ inputs.severity_threshold }}
-        DAST_SCAN_TYPE: ${{ inputs.dast_scan_type }}
-        SOFT_FAIL: ${{ inputs.soft_fail }}
+        ACCUKNOX_TOKEN: ${{ secrets.ACCUKNOX_TOKEN }}
+        ACCUKNOX_LABEL: ${{ secrets.ACCUKNOX_LABEL }}
+        ACCUKNOX_ENDPOINT: ${{ secrets.ACCUKNOX_ENDPOINT }}
+        TARGET_URL: "http://testphp.vulnweb.com"
+        SEVERITY_THRESHOLD: "HIGH"
+        DAST_SCAN_TYPE: "baseline"
+        SOFT_FAIL: "true"
         SCAN_DIR: "/tmp/scan-dir"
       run: |
         set -e
-        cd $SCAN_DIR
+        cd "$SCAN_DIR"
 
         # Validate required inputs
         if [ -z "$ACCUKNOX_TOKEN" ] || [ -z "$ACCUKNOX_LABEL" ] || [ -z "$ACCUKNOX_ENDPOINT" ] || [ -z "$TARGET_URL" ]; then
@@ -74,14 +77,18 @@ runs:
 
         # Prepare softfail flag
         SOFT_FAIL_ARG=""
-        if [ "$SOFT_FAIL" = "true" ]; then
+        SOFT_FAIL_CLEAN="${SOFT_FAIL//[$'\t\r\n ']}"
+        if [ "$SOFT_FAIL_CLEAN" = "true" ]; then
           SOFT_FAIL_ARG="--softfail"
         fi
 
-        # Build scanner arguments
-        SCANNER_ARGS="--target-url $TARGET_URL --severity-threshold $SEVERITY_THRESHOLD --dast-scan-type $DAST_SCAN_TYPE"
+        # Build scanner arguments properly
+        SCANNER_ARGS="--target-url \"$TARGET_URL\""
+        [ -n "$SEVERITY_THRESHOLD" ] && SCANNER_ARGS="$SCANNER_ARGS --severity-threshold \"$SEVERITY_THRESHOLD\""
+        [ -n "$DAST_SCAN_TYPE" ] && SCANNER_ARGS="$SCANNER_ARGS --dast-scan-type \"$DAST_SCAN_TYPE\""
 
         echo "Running AccuKnox DAST scan..."
-        echo "/tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command \"$SCANNER_ARGS\" --container-mode"
+        echo "Command: /tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast $SCANNER_ARGS --container-mode"
 
-        /tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command "$SCANNER_ARGS" --container-mode
+        # Run the scan using eval to properly handle arguments
+        eval /tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast $SCANNER_ARGS --container-mode
