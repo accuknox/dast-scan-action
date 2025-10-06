@@ -2,12 +2,6 @@ name: "AccuKnox DAST Scanner"
 description: "Run AccuKnox Dynamic Application Security Testing (DAST) scan on a web application"
 
 inputs:
-  token:
-    description: "API token for AccuKnox CSPM Console"
-    required: true
-  label:
-    description: "Label for scan results in AccuKnox Console"
-    required: true
   endpoint:
     description: "CSPM Console endpoint URL"
     required: true
@@ -64,21 +58,24 @@ runs:
       run: |
         set -e
         cd /tmp/scan-dir
-    
+
+        # Validate required variables
         if [ -z "$ACCUKNOX_TOKEN" ] || [ -z "$ACCUKNOX_LABEL" ] || [ -z "$ACCUKNOX_ENDPOINT" ] || [ -z "$TARGET_URL" ]; then
           echo "ERROR: ACCUKNOX_TOKEN, ACCUKNOX_LABEL, ACCUKNOX_ENDPOINT, and TARGET_URL must be set!"
           exit 1
         fi
-    
+
+        # Clean and set soft-fail argument
         SOFT_FAIL="${SOFT_FAIL//[$'\t\r\n ']}"
         SOFT_FAIL_ARG=""
         if [ "$SOFT_FAIL" = "true" ]; then
           SOFT_FAIL_ARG="--softfail"
         fi
-    
+
+        # Build the DAST command as a single string for container-mode
         DAST_CMD="zap.sh -t '$TARGET_URL' -s '$SEVERITY_THRESHOLD' -S '$DAST_SCAN_TYPE'"
-    
+
         echo "Full DAST command: /tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command \"$DAST_CMD\" --container-mode"
         echo "Running AccuKnox DAST scan in container mode..."
         /tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command "$DAST_CMD" --container-mode
-        
+
