@@ -32,6 +32,15 @@ runs:
   using: "composite"
   steps:
 
+    - name: Prepare scan directory
+      shell: bash
+      run: |
+        SCAN_DIR="/tmp/scan-dir"
+        mkdir -p "$SCAN_DIR"
+        chmod a+w "$SCAN_DIR"
+        echo "Scan directory created at $SCAN_DIR"
+        cd "$SCAN_DIR"
+
     - name: Download AccuKnox ASPM Scanner
       shell: bash
       run: |
@@ -42,7 +51,6 @@ runs:
     - name: Install DAST tool
       shell: bash
       run: |
-        echo "Installing AccuKnox DAST tool..."
         ./accuknox-aspm-scanner tool install --type dast
         # Ensure ZAP output directory exists
         ZAP_OUTPUT_DIR="$HOME/.local/bin/accuknox/dast/zap"
