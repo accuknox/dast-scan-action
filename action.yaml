@@ -81,5 +81,5 @@ runs:
         DAST_CMD="zap.sh -t '$TARGET_URL' -s '$SEVERITY_THRESHOLD' -S '$DAST_SCAN_TYPE'"
 
         echo "Full DAST command: /tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command \"$DAST_CMD\" --container-mode"
-        echo "Running AccuKnox DAST scan in container mode..."
-        /tmp/accuknox-aspm-scanner scan dast $SOFT_FAIL_ARG --command "$DAST_CMD" --container-mode
+        echo /tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command "$DAST_CMD" --container-mode
+        /tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command "$DAST_CMD" --container-mode
