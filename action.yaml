@@ -51,8 +51,12 @@ runs:
       run: |
         /tmp/accuknox-aspm-scanner tool install --type dast
 
-    - name: Run DAST scan
-      shell: bash
+    - name: Run DAST Scan
+      run: |
+        /tmp/accuknox-aspm-scanner scan dast \
+          --command "zap.sh -t 'http://testhtml5.vulnweb.com/' -s 'HIGH' -S 'full-scan'" \
+          --container-mode \
+          --image owasp/zap2docker-stable:2.16.1
       env:
         ACCUKNOX_TOKEN: ${{ inputs.token }}
         ACCUKNOX_LABEL: ${{ inputs.label }}
