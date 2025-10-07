@@ -82,4 +82,4 @@ runs:
 
         echo "Full DAST command: /tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command \"$DAST_CMD\" --container-mode"
         echo "Running AccuKnox DAST scan in container mode..."
-        /tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command "$DAST_CMD" --container-mode
+        /tmp/accuknox-aspm-scanner scan dast $SOFT_FAIL_ARG --command "$DAST_CMD" --container-mode
