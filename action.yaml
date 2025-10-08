@@ -30,7 +30,7 @@ inputs:
   soft_fail:
     description: "Do not return an error code if vulnerabilities are found"
     required: false
-    default: "true"
+    default: "false"
 
 runs:
   using: "composite"
