@@ -36,7 +36,7 @@ Before using this GitHub Action, ensure the following:
 To authenticate with the AccuKnox Console:
 
 - Navigate to **Settings → Tokens** in the AccuKnox Console
-- Click **Create Token** to generate your `accuknox_token` and view `tenant_id`
+- Click **Create Token** to generate your `accuknox_token` 
 - Securely store these credentials for GitHub Secrets
 
 ---
@@ -64,11 +64,10 @@ jobs:
         with:
           target_url: "http://testphp.vulnweb.com"
           accuknox_endpoint: ${{ secrets.ACCUKNOX_ENDPOINT }}
-          tenant_id: ${{ secrets.TENANT_ID }}
           accuknox_token: ${{ secrets.ACCUKNOX_TOKEN }}
-          label: "my-dast-scan"
-          severity_threshold: "High"
-          scan_type: "baseline"
+          label: ${{ secrets.ACCUKNOX_LABEL }}
+          severity_threshold: "HIGH"
+          dast_scan_type: "full-scan"
 ```
 
 ---
@@ -80,10 +79,9 @@ jobs:
 | `target_url`         | The web application URL to scan                                              | ✅ Yes    | —           |
 | `accuknox_token`     | Token to authenticate with the AccuKnox Console                              | ✅ Yes    | —           |
 | `accuknox_endpoint`  | URL of the AccuKnox Console to upload results                                | ✅ Yes    | —           |
-| `tenant_id`          | Tenant ID associated with your AccuKnox account                              | ✅ Yes    | —           |
 | `label`              | Label to tag the scan results in the AccuKnox Console                        | ✅ Yes    | —           |
 | `severity_threshold` | Severity level (e.g., High, Medium, Low, Informational) to fail the pipeline | ✅ Yes    | —           |
-| `scan_type`          | Type of scan to perform (`baseline` or `full-scan`)                          | ✅ Yes    | `full-scan` |
+| `scan_type`          | Type of scan to perform (`baseline` or `full-scan`)                          | ❌ No    | `baseline` |
 
 ---
 
@@ -91,9 +89,9 @@ jobs:
 
 Go to **Settings > Secrets and variables > Actions** in your GitHub repository and add:
 
-* `ACCUKNOX_ENDPOINT` → Your AccuKnox Console endpoint
-* `TENANT_ID` → Your AccuKnox tenant ID
-* `ACCUKNOX_TOKEN` → API token generated in the AccuKnox Console
+* `ACCUKNOX_ENDPOINT` → Your AccuKnox Console endpoint  
+* `ACCUKNOX_TOKEN` → API token generated in the AccuKnox Console  
+* `ACCUKNOX_LABEL` → Label to tag and identify your scan results in AccuKnox Console  
 
 ---
 
