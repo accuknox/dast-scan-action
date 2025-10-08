@@ -21,7 +21,7 @@ inputs:
     default: "http://testhtml5.vulnweb.com/"
   severity_threshold:
     description: "Minimum severity to fail the scan (LOW, MEDIUM, HIGH)"
-    required: false
+    required: true
     default: "HIGH"
   dast_scan_type:
     description: "DAST scan type: baseline or full-scan"
