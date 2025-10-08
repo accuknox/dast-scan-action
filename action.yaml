@@ -1,37 +1,42 @@
-name: "AccuKnox DAST Scanner"
-description: "Run AccuKnox Dynamic Application Security Testing (DAST) scan on a web application"
+name: "AccuKnox DAST Scan"
+
+description: "Run AccuKnox Dynamic Application Security Testing (DAST) scan on a web application using the ASPM Scanner."
+
+branding:
+  icon: "shield"
+  color: "darkblue"
 
 inputs:
-  token:
+  ACCUKNOX_TOKEN:
     description: "API token for AccuKnox CSPM Console"
     required: true
-  label:
-    description: "Label for scan results in AccuKnox Console"
+  ACCUKNOX_LABEL:
+    description: "Label for scan results in AccuKnox SaaS"
     required: true
-  endpoint:
+  ACCUKNOX_ENDPOINT:
     description: "CSPM Console endpoint URL"
     required: true
     default: "https://cspm.demo.accuknox.com"
-  target_url:
-    description: "The URL of the web application to scan"
+  TARGET_URL:
+    description: "Target web application URL to scan"
     required: true
-  severity_threshold:
-    description: "Minimum severity to fail the scan (LOW, MEDIUM, HIGH)"
+    default: "https://juice-shop.herokuapp.com/"
+  DAST_SCAN_SCRIPT:
+    description: "DAST scan script (zap-baseline.py or zap-fullscan.py)"
     required: false
-    default: "HIGH"
-  dast_scan_type:
-    description: "DAST scan type: baseline or full-scan"
+    default: "zap-baseline.py"
+  SOFT_FAIL:
+    description: "Do not fail the pipeline if vulnerabilities are found"
     required: false
-    default: "baseline"
-  soft_fail:
-    description: "Do not return an error code if vulnerabilities are found"
-    required: false
-    default: true
+    default: "true"
 
 runs:
   using: "composite"
   steps:
-    - name: Prepare scan directory
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Prepare Scan Directory
       shell: bash
       run: |
         SCAN_DIR="/tmp/scan-dir"
@@ -39,49 +44,44 @@ runs:
         chmod 777 "$SCAN_DIR"
         echo "Scan directory ready at $SCAN_DIR"
 
-    - name: Download AccuKnox ASPM Scanner
+    - name: Install AccuKnox ASPM Scanner
       shell: bash
       run: |
-        curl -L https://github.com/accuknox/aspm-scanner-cli/releases/download/v0.13.4/accuknox-aspm-scanner -o /tmp/accuknox-aspm-scanner
-        chmod +x /tmp/accuknox-aspm-scanner
-        echo "AccuKnox ASPM Scanner ready at /tmp/accuknox-aspm-scanner"
+        echo "Installing AccuKnox ASPM scanner..."
+        pip install https://github.com/accuknox/aspm-scanner-cli/releases/download/v0.13.4/accuknox_aspm_scanner-0.13.4-py3-none-any.whl --break-system-packages
+        echo "✅ ASPM scanner installed"
 
-    - name: Install DAST tool
-      shell: bash
-      run: |
-        /tmp/accuknox-aspm-scanner tool install --type dast
-        echo "✅ DAST tool installed"
-
-    - name: Run DAST scan
+    - name: Run DAST Scan
       shell: bash
       env:
-        ACCUKNOX_TOKEN: ${{ inputs.token }}
-        ACCUKNOX_LABEL: ${{ inputs.label }}
-        ACCUKNOX_ENDPOINT: ${{ inputs.endpoint }}
-        TARGET_URL: ${{ inputs.target_url }}
-        SEVERITY_THRESHOLD: ${{ inputs.severity_threshold }}
-        DAST_SCAN_TYPE: ${{ inputs.dast_scan_type }}
-        SOFT_FAIL: ${{ inputs.soft_fail }}
+        ACCUKNOX_TOKEN: ${{ inputs.ACCUKNOX_TOKEN }}
+        ACCUKNOX_LABEL: ${{ inputs.ACCUKNOX_LABEL }}
+        ACCUKNOX_ENDPOINT: ${{ inputs.ACCUKNOX_ENDPOINT }}
+        TARGET_URL: ${{ inputs.TARGET_URL }}
+        DAST_SCAN_SCRIPT: ${{ inputs.DAST_SCAN_SCRIPT }}
+        SOFT_FAIL: ${{ inputs.SOFT_FAIL }}
         DEBUG: "TRUE"
       run: |
         set -e
+        cd /tmp/scan-dir
 
-        # Clean soft_fail
+        # Prepare soft-fail argument
         SOFT_FAIL="${SOFT_FAIL//[$'\t\r\n ']}"
         SOFT_FAIL_ARG=""
         if [ "$SOFT_FAIL" = "true" ]; then
           SOFT_FAIL_ARG="--softfail"
         fi
 
-        # Validate required inputs
+        # Validate required secrets
         if [ -z "$ACCUKNOX_TOKEN" ] || [ -z "$ACCUKNOX_LABEL" ] || [ -z "$ACCUKNOX_ENDPOINT" ] || [ -z "$TARGET_URL" ]; then
           echo "ERROR: ACCUKNOX_TOKEN, ACCUKNOX_LABEL, ACCUKNOX_ENDPOINT, and TARGET_URL must be set!"
           exit 1
         fi
 
+        # Build DAST scan command
+        ARGS="$DAST_SCAN_SCRIPT -t $TARGET_URL -I"
         echo "👉 Running DAST scan..."
-        /tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast \
-          --target "$TARGET_URL" \
-          --severity "$SEVERITY_THRESHOLD" \
-          --scan-type "$DAST_SCAN_TYPE" \
-          --container-mode
+        echo "/usr/local/bin/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command \"$ARGS\" --container-mode"
+
+        accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command "$ARGS" --container-mode
+        cd -
