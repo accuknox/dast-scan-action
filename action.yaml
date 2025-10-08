@@ -71,16 +71,17 @@ runs:
         mkdir -p /tmp/scan-dir
         cd /tmp/scan-dir
 
-        # Determine ZAP script
+        # Select correct ZAP script
         if [ "$DAST_SCAN_TYPE" = "full-scan" ]; then
-          SCRIPT="zap-fullscan.py"
+          SCRIPT="zap-full-scan.py"
         else
           SCRIPT="zap-baseline.py"
         fi
 
-        # Use container path for script
-        CMD="/zap/$SCRIPT -t $TARGET_URL -s $SEVERITY_THRESHOLD"
+        # Build scan command (no /zap/ prefix)
+        CMD="$SCRIPT -t $TARGET_URL -s $SEVERITY_THRESHOLD"
 
+        # Handle softfail
         SOFT_FAIL_ARG=""
         if [ "$SOFT_FAIL" = "true" ]; then
           SOFT_FAIL_ARG="--softfail"
