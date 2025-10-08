@@ -16,7 +16,7 @@ inputs:
     description: "The URL of the web application to scan"
     required: true
   severity_threshold:
-    description: "Minimum severity to fail the scan (LOW, MEDIUM, HIGH)"
+    description: "Minimum severity to fail the scan (e.g., LOW, MEDIUM, HIGH)"
     required: false
     default: "HIGH"
   dast_scan_type:
@@ -31,20 +31,11 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Prepare scan directory
-      shell: bash
-      run: |
-        SCAN_DIR="/tmp/scan-dir"
-        mkdir -p "$SCAN_DIR"
-        chmod 777 "$SCAN_DIR"
-        echo "Scan directory ready at $SCAN_DIR"
-
     - name: Download AccuKnox ASPM Scanner
       shell: bash
       run: |
         curl -L https://github.com/accuknox/aspm-scanner-cli/releases/download/v0.13.4/accuknox-aspm-scanner -o /tmp/accuknox-aspm-scanner
         chmod +x /tmp/accuknox-aspm-scanner
-        echo "AccuKnox ASPM Scanner ready at /tmp/accuknox-aspm-scanner"
 
     - name: Install DAST tool
       shell: bash
@@ -61,32 +52,34 @@ runs:
         SEVERITY_THRESHOLD: ${{ inputs.severity_threshold }}
         DAST_SCAN_TYPE: ${{ inputs.dast_scan_type }}
         SOFT_FAIL: ${{ inputs.soft_fail }}
-        DEBUG: "TRUE"
       run: |
         set -e
-        cd /tmp/scan-dir
 
-        # Determine the proper script based on DAST type
+        # Pick correct ZAP script
         if [ "$DAST_SCAN_TYPE" = "full-scan" ]; then
           SCRIPT="zap-fullscan.py"
         else
           SCRIPT="zap-baseline.py"
         fi
 
-        # Handle softfail
+        # Soft fail flag
+        SOFT_FAIL="${SOFT_FAIL,,}"   # to lowercase
         SOFT_FAIL="${SOFT_FAIL//[$'\t\r\n ']}"
         SOFT_FAIL_ARG=""
         if [ "$SOFT_FAIL" = "true" ]; then
           SOFT_FAIL_ARG="--softfail"
         fi
 
+        # Validate inputs
         if [ -z "$ACCUKNOX_TOKEN" ] || [ -z "$ACCUKNOX_LABEL" ] || [ -z "$ACCUKNOX_ENDPOINT" ] || [ -z "$TARGET_URL" ]; then
-          echo "ERROR: ACCUKNOX_TOKEN, ACCUKNOX_LABEL, ACCUKNOX_ENDPOINT, and TARGET_URL must be set!"
+          echo "ERROR: token, label, endpoint, and target_url must be set!"
           exit 1
         fi
 
-        # Build the command for ASPM scanner
-        ARGS="$SCRIPT -t '$TARGET_URL' -s '$SEVERITY_THRESHOLD' -S '$DAST_SCAN_TYPE'"
+        # Build ZAP command string
+        CMD="$SCRIPT -t $TARGET_URL -s $SEVERITY_THRESHOLD"
 
-        echo "Full DAST command: /tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command \"$ARGS\" --container-mode"
-        /tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command "$ARGS" --container-mode
+        echo "👉 Running DAST with command:"
+        echo "/tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command \"$CMD\" --container-mode"
+
+        /tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command "$CMD" --container-mode
