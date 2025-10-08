@@ -3,7 +3,7 @@ description: "Run AccuKnox Dynamic Application Security Testing (DAST) scan on a
 
 branding:
   icon: "shield"
-  color: "003366" # dark blue
+  color: "purple"
 
 inputs:
   token:
