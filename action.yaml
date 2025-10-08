@@ -66,6 +66,7 @@ runs:
         SEVERITY_THRESHOLD: ${{ inputs.severity_threshold }}
         DAST_SCAN_TYPE: ${{ inputs.dast_scan_type }}
         SOFT_FAIL: ${{ inputs.soft_fail }}
+        DEBUG: "TRUE"
       run: |
         set -e
         mkdir -p /tmp/scan-dir
