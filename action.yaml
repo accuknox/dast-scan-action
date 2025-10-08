@@ -69,7 +69,7 @@ runs:
         chmod 777 "$SCAN_DIR"
         cd "$SCAN_DIR"
 
-        # Handle softfail normalization
+        # Normalize softfail
         SOFT_FAIL="${SOFT_FAIL,,}"
         SOFT_FAIL="${SOFT_FAIL//[$'\t\r\n ']}"
         SOFT_FAIL_ARG=""
@@ -77,17 +77,19 @@ runs:
           SOFT_FAIL_ARG="--softfail"
         fi
 
-        if [ -z "$ACCUKNOX_TOKEN" ] || [ -z "$ACCUKNOX_LABEL" ] || [ -z "$ACCUKNOX_ENDPOINT" ] || [ -z "$TARGET_URL" ]; then
-          echo "❌ ERROR: token, label, endpoint, and target_url must be provided!"
-          exit 1
+        if [ "$DAST_SCAN_TYPE" = "full-scan" ]; then
+          SCRIPT="zap-fullscan.py"
+        else
+          SCRIPT="zap-baseline.py"
         fi
 
+        # Build the actual ZAP command string
+        CMD="$SCRIPT -t $TARGET_URL -s $SEVERITY_THRESHOLD"
+
         echo "👉 Running DAST with command:"
-        echo "/tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --target \"$TARGET_URL\" --severity \"$SEVERITY_THRESHOLD\" --scan-type \"$DAST_SCAN_TYPE\" --container-mode"
+        echo "/tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command \"$CMD\" --container-mode"
 
         /tmp/accuknox-aspm-scanner scan \
           $SOFT_FAIL_ARG dast \
-          --target "$TARGET_URL" \
-          --severity "$SEVERITY_THRESHOLD" \
-          --scan-type "$DAST_SCAN_TYPE" \
+          --command "$CMD" \
           --container-mode
