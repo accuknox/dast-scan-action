@@ -48,13 +48,13 @@ runs:
       run: |
         curl -L https://github.com/accuknox/aspm-scanner-cli/releases/download/v0.13.4/accuknox-aspm-scanner -o /tmp/accuknox-aspm-scanner
         chmod +x /tmp/accuknox-aspm-scanner
-        echo "✅ ASPM Scanner ready at /tmp/accuknox-aspm-scanner"
+        echo "ASPM Scanner ready at /tmp/accuknox-aspm-scanner"
 
     - name: Install DAST tool
       shell: bash
       run: |
         /tmp/accuknox-aspm-scanner tool install --type dast
-        echo "✅ DAST tool installed"
+        echo "DAST tool installed"
 
     - name: Run DAST scan
       shell: bash
@@ -83,12 +83,13 @@ runs:
         CMD="$SCRIPT -t $TARGET_URL -s $SEVERITY_THRESHOLD"
 
         # Handle softfail
+        SOFT_FAIL="${SOFT_FAIL//[$'\t\r\n ']}"
         SOFT_FAIL_ARG=""
         if [ "$SOFT_FAIL" = "true" ]; then
           SOFT_FAIL_ARG="--softfail"
         fi
 
-        echo "👉 Running DAST scan..."
+        echo "Running DAST scan..."
         echo "/tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command \"$CMD\" --container-mode"
 
         /tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command "$CMD" --container-mode
