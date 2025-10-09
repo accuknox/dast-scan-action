@@ -165,16 +165,21 @@ runs:
       run: |
         set -e
         cd /tmp/scan-dir
-
-        # Normalize softfail flag
+        
+        if [ "$DAST_SCAN_TYPE" = "full-scan" ]; then
+          SCRIPT="zap-full-scan.py"
+        else
+          SCRIPT="zap-baseline.py"
+        fi
+        
+        # Build the command string for --command
+        CMD="$SCRIPT -t $TARGET_URL -s $SEVERITY_THRESHOLD -J results.json"
+        
+        # Handle softfail
         SOFT_FAIL="${SOFT_FAIL//[$'\t\r\n ']}"
         SOFT_FAIL_ARG=""
         [ "$SOFT_FAIL" = "true" ] && SOFT_FAIL_ARG="--softfail"
-
-        # Build CLI arguments (use official AccuKnox CLI flags)
-        ARGS="--target-url \"$TARGET_URL\""
-        [ -n "$SEVERITY_THRESHOLD" ] && ARGS="$ARGS --severity-threshold \"$SEVERITY_THRESHOLD\""
-        [ -n "$DAST_SCAN_TYPE" ] && ARGS="$ARGS --dast-scan-type \"$DAST_SCAN_TYPE\""
-
-        echo "Running: /tmp/accuknox-aspm-scanner $SOFT_FAIL_ARG scan dast $ARGS --container-mode"
-        /tmp/accuknox-aspm-scanner $SOFT_FAIL_ARG scan dast $ARGS --container-mode
+        
+        # Run AccuKnox scanner
+        echo "Running: /tmp/accuknox-aspm-scanner $SOFT_FAIL_ARG scan dast --command \"$CMD\" --container-mode"
+        exec /tmp/accuknox-aspm-scanner $SOFT_FAIL_ARG scan dast --command "$CMD" --container-mode
