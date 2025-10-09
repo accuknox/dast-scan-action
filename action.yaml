@@ -70,15 +70,20 @@ runs:
       run: |
         set -e
 
-        # Select the correct ZAP script
+        SCAN_DIR="/tmp/scan-dir"
+
+        # Select correct ZAP script
         if [ "$DAST_SCAN_TYPE" = "full-scan" ]; then
           SCRIPT="zap-full-scan.py"
         else
           SCRIPT="zap-baseline.py"
         fi
 
+        # Ensure clean results file path inside container
+        RESULT_PATH="/zap/wrk/results.json"
+
         # Build scan command
-        CMD="$SCRIPT -t $TARGET_URL -s $SEVERITY_THRESHOLD -J results.json"
+        CMD="$SCRIPT -t $TARGET_URL -s $SEVERITY_THRESHOLD -J $RESULT_PATH"
 
         # Handle softfail
         SOFT_FAIL="${SOFT_FAIL//[$'\t\r\n ']}"
@@ -89,4 +94,11 @@ runs:
 
         echo "Running DAST scan..."
         echo "/tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command \"$CMD\" --container-mode"
+
         /tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command "$CMD" --container-mode
+
+    - name: Upload DAST results
+      uses: actions/upload-artifact@v3
+      with:
+        name: dast-results
+        path: /tmp/scan-dir/results.json
