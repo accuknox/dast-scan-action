@@ -69,7 +69,6 @@ runs:
         DEBUG: "TRUE"
       run: |
         set -e
-        cd /tmp/scan-dir
 
         # Select the correct ZAP script
         if [ "$DAST_SCAN_TYPE" = "full-scan" ]; then
