@@ -28,14 +28,14 @@ inputs:
     required: false
     default: "baseline"
   soft_fail:
-    description: "Do not return an error code if vulnerabilities are found"
+    description: "Do not fail the workflow if vulnerabilities are found"
     required: false
     default: "true"
 
 runs:
   using: "composite"
   steps:
-    - name: Prepare container-safe scan directory
+    - name: Prepare scan directory
       shell: bash
       run: |
         SCAN_DIR="/tmp/scan-dir"
@@ -69,12 +69,10 @@ runs:
         DEBUG: "TRUE"
       run: |
         set -e
-
-        # Use container-safe path
         SCAN_DIR="/tmp/scan-dir"
         cd "$SCAN_DIR"
 
-        # Select correct ZAP script
+        # Select the correct ZAP script
         if [ "$DAST_SCAN_TYPE" = "full-scan" ]; then
           SCRIPT="zap-full-scan.py"
         else
@@ -82,17 +80,23 @@ runs:
         fi
 
         # Build scan command
-        CMD="$SCRIPT -t $TARGET_URL -s $SEVERITY_THRESHOLD -J /zap/wrk/results.json"
+        CMD="$SCRIPT -t $TARGET_URL -s $SEVERITY_THRESHOLD -J results.json"
 
         # Handle softfail
-        SOFT_FAIL="${SOFT_FAIL//[$'\t\r\n ']}"
         SOFT_FAIL_ARG=""
-        if [ "$SOFT_FAIL" = "true" ]; then
-          SOFT_FAIL_ARG="--softfail"
+        if [ "${SOFT_FAIL,,}" = "true" ]; then
+          SOFT_FAIL_ARG="--softfail true"
         fi
 
         echo "Running DAST scan..."
         echo "/tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command \"$CMD\" --container-mode"
 
-        # Run scanner with container-mode, using /tmp/scan-dir inside container
+        # Run scanner and override exit code if softfail
+        set +e
         /tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command "$CMD" --container-mode
+        EXIT_CODE=$?
+        if [ "${SOFT_FAIL,,}" = "true" ]; then
+          echo "Softfail enabled, overriding exit code to 0"
+          EXIT_CODE=0
+        fi
+        exit $EXIT_CODE
