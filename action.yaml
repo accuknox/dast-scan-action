@@ -98,7 +98,7 @@ runs:
         /tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command "$CMD" --container-mode
 
     - name: Upload DAST results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v5
       with:
         name: dast-results
         path: /tmp/scan-dir/results.json
