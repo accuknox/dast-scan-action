@@ -1,3 +1,98 @@
+# name: "AccuKnox DAST Scan"
+# description: "Run AccuKnox Dynamic Application Security Testing (DAST) scan on a web application"
+
+# branding:
+#   icon: "shield"
+#   color: "purple"
+
+# inputs:
+#   accuknox_token:
+#     description: "API token for AccuKnox CSPM Console"
+#     required: true
+#   accuknox_label:
+#     description: "Label for scan results in AccuKnox Console"
+#     required: true
+#   accuknox_endpoint:
+#     description: "CSPM Console endpoint URL"
+#     required: true
+#   target_url:
+#     description: "The URL of the web application to scan"
+#     required: false
+#     default: "http://testhtml5.vulnweb.com/"
+#   severity_threshold:
+#     description: "Minimum severity to fail the scan (LOW, MEDIUM, HIGH)"
+#     required: true
+#     default: "HIGH"
+#   dast_scan_type:
+#     description: "DAST scan type: baseline or full-scan"
+#     required: false
+#     default: "baseline"
+#   soft_fail:
+#     description: "Do not return an error code if vulnerabilities are found"
+#     required: false
+#     default: "true"
+
+# runs:
+#   using: "composite"
+#   steps:
+#     - name: Prepare scan directory
+#       shell: bash
+#       run: |
+#         SCAN_DIR="/tmp/scan-dir"
+#         mkdir -p "$SCAN_DIR"
+#         chmod 777 "$SCAN_DIR"
+#         echo "Scan directory ready at $SCAN_DIR"
+
+#     - name: Download AccuKnox ASPM Scanner
+#       shell: bash
+#       run: |
+#         curl -L https://github.com/accuknox/aspm-scanner-cli/releases/download/v0.13.4/accuknox-aspm-scanner -o /tmp/accuknox-aspm-scanner
+#         chmod +x /tmp/accuknox-aspm-scanner
+#         echo "ASPM Scanner ready at /tmp/accuknox-aspm-scanner"
+
+#     - name: Install DAST tool
+#       shell: bash
+#       run: |
+#         /tmp/accuknox-aspm-scanner tool install --type dast
+#         echo "DAST tool installed"
+
+#     - name: Run DAST scan
+#       shell: bash
+#       env:
+#         ACCUKNOX_TOKEN: ${{ inputs.accuknox_token }}
+#         ACCUKNOX_LABEL: ${{ inputs.accuknox_label }}
+#         ACCUKNOX_ENDPOINT: ${{ inputs.accuknox_endpoint }}
+#         TARGET_URL: ${{ inputs.target_url }}
+#         SEVERITY_THRESHOLD: ${{ inputs.severity_threshold }}
+#         DAST_SCAN_TYPE: ${{ inputs.dast_scan_type }}
+#         SOFT_FAIL: ${{ inputs.soft_fail }}
+#         DEBUG: "TRUE"
+#       run: |
+#         set -e
+#         cd /tmp/scan-dir
+
+#         # Select the correct ZAP script
+#         if [ "$DAST_SCAN_TYPE" = "full-scan" ]; then
+#           SCRIPT="zap-full-scan.py"
+#         else
+#           SCRIPT="zap-baseline.py"
+#         fi
+
+#         # Build scan command
+#         CMD="$SCRIPT -t $TARGET_URL -s $SEVERITY_THRESHOLD -J results.json"
+
+#         # Handle softfail flag correctly (no value)
+#         SOFT_FAIL_ARG=""
+#         if [ "${SOFT_FAIL,,}" = "true" ]; then
+#           SOFT_FAIL_ARG="--softfail"
+#         fi
+
+#         echo "Running DAST scan..."
+#         echo "/tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command \"$CMD\" --container-mode"
+#         /tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command "$CMD" --container-mode
+
+
+
 name: "AccuKnox DAST Scan"
 description: "Run AccuKnox Dynamic Application Security Testing (DAST) scan on a web application"
 
@@ -71,22 +166,15 @@ runs:
         set -e
         cd /tmp/scan-dir
 
-        # Select the correct ZAP script
-        if [ "$DAST_SCAN_TYPE" = "full-scan" ]; then
-          SCRIPT="zap-full-scan.py"
-        else
-          SCRIPT="zap-baseline.py"
-        fi
-
-        # Build scan command
-        CMD="$SCRIPT -t $TARGET_URL -s $SEVERITY_THRESHOLD -J results.json"
-
-        # Handle softfail flag correctly (no value)
+        # Normalize softfail flag
+        SOFT_FAIL="${SOFT_FAIL//[$'\t\r\n ']}"
         SOFT_FAIL_ARG=""
-        if [ "${SOFT_FAIL,,}" = "true" ]; then
-          SOFT_FAIL_ARG="--softfail"
-        fi
+        [ "$SOFT_FAIL" = "true" ] && SOFT_FAIL_ARG="--softfail"
 
-        echo "Running DAST scan..."
-        echo "/tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command \"$CMD\" --container-mode"
-        /tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command "$CMD" --container-mode
+        # Build CLI arguments (use official AccuKnox CLI flags)
+        ARGS="--target-url \"$TARGET_URL\""
+        [ -n "$SEVERITY_THRESHOLD" ] && ARGS="$ARGS --severity-threshold \"$SEVERITY_THRESHOLD\""
+        [ -n "$DAST_SCAN_TYPE" ] && ARGS="$ARGS --dast-scan-type \"$DAST_SCAN_TYPE\""
+
+        echo "Running: /tmp/accuknox-aspm-scanner $SOFT_FAIL_ARG scan dast $ARGS --container-mode"
+        /tmp/accuknox-aspm-scanner $SOFT_FAIL_ARG scan dast $ARGS --container-mode
