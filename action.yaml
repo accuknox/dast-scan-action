@@ -113,7 +113,7 @@ inputs:
   target_url:
     description: "The URL of the web application to scan"
     required: false
-    default: "http://testhtml5.vulnweb.com/"
+    default: "http://testphp.vulnweb.com/"
   severity_threshold:
     description: "Minimum severity to fail the scan (LOW, MEDIUM, HIGH)"
     required: true
@@ -164,22 +164,24 @@ runs:
         DEBUG: "TRUE"
       run: |
         set -e
-        cd /tmp/scan-dir
-        
+
+        # Select the correct ZAP script
         if [ "$DAST_SCAN_TYPE" = "full-scan" ]; then
           SCRIPT="zap-full-scan.py"
         else
           SCRIPT="zap-baseline.py"
         fi
-        
-        # Build the command string for --command
-        CMD="$SCRIPT -t $TARGET_URL -s $SEVERITY_THRESHOLD -J results.json"
-        
+
         # Handle softfail
         SOFT_FAIL="${SOFT_FAIL//[$'\t\r\n ']}"
         SOFT_FAIL_ARG=""
-        [ "$SOFT_FAIL" = "true" ] && SOFT_FAIL_ARG="--softfail"
-        
-        # Run AccuKnox scanner
-        echo "Running: /tmp/accuknox-aspm-scanner $SOFT_FAIL_ARG scan dast --command \"$CMD\" --container-mode"
-        exec /tmp/accuknox-aspm-scanner $SOFT_FAIL_ARG scan dast --command "$CMD" --container-mode
+        if [ "$SOFT_FAIL" = "true" ]; then
+          SOFT_FAIL_ARG="--softfail"
+        fi
+
+        # Build the DAST command
+        ZAP_CMD="$SCRIPT -t $TARGET_URL -s $SEVERITY_THRESHOLD -J results.json"
+
+        echo "Running DAST scan..."
+        echo "/tmp/accuknox-aspm-scanner scan dast $SOFT_FAIL_ARG --command \"$ZAP_CMD\" --container-mode"
+        /tmp/accuknox-aspm-scanner scan dast $SOFT_FAIL_ARG --command "$ZAP_CMD" --container-mode
