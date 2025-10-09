@@ -35,7 +35,7 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Prepare scan directory
+    - name: Prepare container-safe scan directory
       shell: bash
       run: |
         SCAN_DIR="/tmp/scan-dir"
@@ -70,7 +70,9 @@ runs:
       run: |
         set -e
 
+        # Use container-safe path
         SCAN_DIR="/tmp/scan-dir"
+        cd "$SCAN_DIR"
 
         # Select correct ZAP script
         if [ "$DAST_SCAN_TYPE" = "full-scan" ]; then
@@ -79,11 +81,8 @@ runs:
           SCRIPT="zap-baseline.py"
         fi
 
-        # Ensure clean results file path inside container
-        RESULT_PATH="/zap/wrk/results.json"
-
         # Build scan command
-        CMD="$SCRIPT -t $TARGET_URL -s $SEVERITY_THRESHOLD -J $RESULT_PATH"
+        CMD="$SCRIPT -t $TARGET_URL -s $SEVERITY_THRESHOLD -J /zap/wrk/results.json"
 
         # Handle softfail
         SOFT_FAIL="${SOFT_FAIL//[$'\t\r\n ']}"
@@ -95,10 +94,5 @@ runs:
         echo "Running DAST scan..."
         echo "/tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command \"$CMD\" --container-mode"
 
+        # Run scanner with container-mode, using /tmp/scan-dir inside container
         /tmp/accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --command "$CMD" --container-mode
-
-    - name: Upload DAST results
-      uses: actions/upload-artifact@main
-      with:
-        name: dast-results
-        path: /tmp/scan-dir/results.json
