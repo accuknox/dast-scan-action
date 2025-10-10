@@ -1,95 +1,83 @@
-name: AccuKnox DAST
-description: Run a DAST (full or baseline) and upload the reports to the AccuKnox CSPM panel.
+name: "AccuKnox DAST Scan"
+description: "Run AccuKnox Dynamic Application Security Testing (DAST) scan on a web application"
+
+branding:
+  icon: "shield"
+  color: "purple"
 
 inputs:
-  target_url:
-    description: "The URL of the web application to scan."
-    required: true
   accuknox_token:
-    description: "Token for authenticating with the AccuKnox CSPM panel."
+    description: "API token for AccuKnox CSPM Control Plane"
+    required: true
+  accuknox_label:
+    description: "Label for scan results in AccuKnox Console"
     required: true
   accuknox_endpoint:
-    description: "The URL of the AccuKnox CSPM panel to push the scan results to."
+    description: "CSPM Control Plane Domain"
     required: true
-  tenant_id:
-    description: "The ID of the tenant associated with the CSPM dashboard."
+  target_url:
+    description: "The URL of the web application to scan"
     required: true
-  label:
-    description: "Label created in AccuKnox SaaS for associating the scan results."
-    required: true
+  dast_scan_type:
+    description: "DAST scan type (baseline or full-scan)"
+    required: false
+    default: "baseline"
   severity_threshold:
-    description: "The minimum severity level (e.g., High, Medium, Low, Informational) that will cause the pipeline to fail if present in the report."
-    required: true
-  scan_type:
-    description: "Type of scan to run: 'baseline' or 'full-scan'."
-    required: true
-    default: "full-scan"
+    description: "Minimum severity to fail the scan (LOW, MEDIUM, HIGH)"
+    required: false
+    default: "HIGH"
+  soft_fail:
+    description: "Do not return an error code if vulnerabilities are found"
+    required: false
+    default: "true"
 
 runs:
   using: "composite"
   steps:
-    - name: Set permissions for output directory
-      run: |
-        mkdir -p /tmp/zap
-        chmod a+w /tmp/zap
-        ls -la /tmp/zap
+    - name: Install AccuKnox ASPM Scanner
       shell: bash
-
-    - name: Run DAST
       run: |
-        if [ "${{ inputs.scan_type }}" == "baseline" ]; then
-          SCAN_COMMAND="zap-baseline.py -t ${{ inputs.target_url }} -J report.json -I"
+        echo "Installing AccuKnox ASPM scanner..."
+        pip install https://github.com/accuknox/aspm-scanner-cli/releases/download/v0.13.4/accuknox_aspm_scanner-0.13.4-py3-none-any.whl --break-system-packages
+        echo "AccuKnox ASPM scanner installed successfully."
+
+    - name: Prepare scan directory
+      shell: bash
+      run: |
+        mkdir -p /tmp/scan-dir
+        chmod 777 /tmp/scan-dir
+        echo "Scan directory ready at /tmp/scan-dir"
+
+    - name: Run AccuKnox DAST Scan
+      shell: bash
+      env:
+        ACCUKNOX_TOKEN: ${{ inputs.accuknox_token }}
+        ACCUKNOX_LABEL: ${{ inputs.accuknox_label }}
+        ACCUKNOX_ENDPOINT: ${{ inputs.accuknox_endpoint }}
+        TARGET_URL: ${{ inputs.target_url }}
+        DAST_SCAN_TYPE: ${{ inputs.dast_scan_type }}
+        SEVERITY_THRESHOLD: ${{ inputs.severity_threshold }}
+        SOFT_FAIL: ${{ inputs.soft_fail }}
+      run: |
+        set -e
+        cd /tmp/scan-dir
+
+        echo "Starting AccuKnox DAST scan..."
+
+        if [ "$DAST_SCAN_TYPE" = "full-scan" ]; then
+          DAST_SCAN_SCRIPT="zap-full-scan.py"
         else
-          SCAN_COMMAND="zap-full-scan.py -t ${{ inputs.target_url }} -J report.json -I"
+          DAST_SCAN_SCRIPT="zap-baseline.py"
         fi
 
-        docker run --rm \
-          -v /tmp/zap:/zap/wrk \
-          -t zaproxy/zap-stable $SCAN_COMMAND
-      shell: bash
-
-    - name: View Report
-      run: |
-        cat /tmp/zap/report.json
-      shell: bash
-
-
-    - name: Upload DAST Report to AccuKnox CSPM Panel
-      run: |
-        response=$(curl --location --request POST "https://${{ inputs.accuknox_endpoint }}/api/v1/artifact/?tenant_id=${{ inputs.tenant_id }}&data_type=ZAP&label_id=${{ inputs.label }}&save_to_s3=true" \
-          --header "Tenant-Id: ${{ inputs.tenant_id }}" \
-          --header "Authorization: Bearer ${{ inputs.accuknox_token }}" \
-          --form "file=@/tmp/zap/report.json")
-
-        echo "Response: $response"
-        if [[ "$response" != *"File received successfully"* ]]; then
-          echo "Error: Failed to push report to CSPM panel"
-          exit 1
+        SOFT_FAIL_ARG=""
+        if [ "$SOFT_FAIL" = "true" ]; then
+          SOFT_FAIL_ARG="--softfail"
         fi
-      shell: bash
 
-    - name: Check Severity Level in ZAP Report
-      run: |
-        # Map severity threshold to risk code (0=Informational, 1=Low, 2=Medium, 3=High)
-        case "${{ inputs.severity_threshold }}" in
-          High)           RISK_CODE=3 ;;
-          Medium)         RISK_CODE=2 ;;
-          Low)            RISK_CODE=1 ;;
-          Informational)  RISK_CODE=0 ;;
-          *)              echo "Invalid severity threshold"; exit 1 ;;
-        esac
+        CMD="$DAST_SCAN_SCRIPT -t $TARGET_URL -I"
 
-        # Check if any alerts in the report meet or exceed the threshold risk code
-        if jq -e --argjson risk_code "$RISK_CODE" \
-             '.site[].alerts[] | select(.riskcode|tonumber >= $risk_code)' /tmp/zap/report.json > /dev/null; then
-          echo "Error: Vulnerability with severity ${{ inputs.severity_threshold }} or higher found in ZAP report."
-          exit 1
-        else
-          echo "No vulnerabilities with severity ${{ inputs.severity_threshold }} or higher were found."
-        fi
-      shell: bash
+        echo accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --severity-threshold "$SEVERITY_THRESHOLD" --command "$CMD" --container-mode
+        accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --severity-threshold "$SEVERITY_THRESHOLD" --command "$CMD" --container-mode
 
-
-branding:
-  icon: "shield"
-  color: "red"
+        cd -
