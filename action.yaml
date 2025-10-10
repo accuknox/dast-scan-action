@@ -77,8 +77,7 @@ runs:
 
         CMD="$DAST_SCAN_SCRIPT -t $TARGET_URL -I"
 
-        echo "Executing: accuknox-aspm-scanner scan dast $SOFT_FAIL_ARG --severity-threshold $SEVERITY_THRESHOLD --command \"$CMD\" --container-mode"
-
-        accuknox-aspm-scanner scan dast $SOFT_FAIL_ARG --severity-threshold "$SEVERITY_THRESHOLD" --command "$CMD" --container-mode
+        echo accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --severity-threshold "$SEVERITY_THRESHOLD" --command "$CMD" --container-mode
+        accuknox-aspm-scanner scan $SOFT_FAIL_ARG dast --severity-threshold "$SEVERITY_THRESHOLD" --command "$CMD" --container-mode
 
         cd -
