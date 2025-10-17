@@ -65,7 +65,7 @@ jobs:
           target_url: "http://testphp.vulnweb.com"
           accuknox_endpoint: ${{ secrets.ACCUKNOX_ENDPOINT }}
           accuknox_token: ${{ secrets.ACCUKNOX_TOKEN }}
-          label: ${{ secrets.ACCUKNOX_LABEL }}
+          accuknox_label: ${{ secrets.ACCUKNOX_LABEL }}
           severity_threshold: "HIGH"
           dast_scan_type: "full-scan"
 ```
