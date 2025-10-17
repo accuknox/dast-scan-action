@@ -79,7 +79,7 @@ jobs:
 | `target_url`         | The web application URL to scan                                              | ✅ Yes    | —           |
 | `accuknox_token`     | Token to authenticate with the AccuKnox Console                              | ✅ Yes    | —           |
 | `accuknox_endpoint`  | URL of the AccuKnox Console to upload results                                | ✅ Yes    | —           |
-| `label`              | Label to tag the scan results in the AccuKnox Console                        | ✅ Yes    | —           |
+| `accuknox_label`     | Label to tag the scan results in the AccuKnox Console                        | ✅ Yes    | —           |
 | `severity_threshold` | Severity level (e.g., High, Medium, Low, Informational) to fail the pipeline | ✅ Yes    | —           |
 | `scan_type`          | Type of scan to perform (`baseline` or `full-scan`)                          | ❌ No    | `baseline` |
 
