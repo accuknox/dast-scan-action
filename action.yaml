@@ -1,4 +1,4 @@
-name: "AccuKnox DAST Scan"
+name: "AccuKnox DAST"
 description: "Run AccuKnox Dynamic Application Security Testing (DAST) scan on a web application"
 
 branding:
