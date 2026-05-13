@@ -37,10 +37,9 @@ runs:
     - name: Install AccuKnox ASPM Scanner
       shell: bash
       run: |
-        echo "Downloading AccuKnox ASPM Scanner..."
-        curl -L https://github.com/accuknox/aspm-scanner-cli/releases/download/v0.14.2/accuknox-aspm-scanner -o accuknox-aspm-scanner
-        chmod +x accuknox-aspm-scanner
-
+       echo "Installing AccuKnox ASPM scanner..."
+        pip install https://github.com/accuknox/aspm-scanner-cli/releases/download/v0.14.2/accuknox_aspm_scanner-0.14.2-py3-none-any.whl --break-system-packages
+        echo "AccuKnox ASPM scanner installed successfully."
 
     - name: Prepare scan directory
       shell: bash
